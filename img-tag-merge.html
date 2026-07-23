@@ -15,6 +15,9 @@
     --muted: #6b8259;
     --accent: #7cb342;
     --accent-dim: #5f9636;
+    --accent-ink: #1f2a17;
+    --accent-hover-ink: #ffffff;
+    --input-bg: #f7fbf1;
     --ok: #4c8c3c;
     --warn: #c9611f;
     --mono: 'IBM Plex Mono', monospace;
@@ -30,13 +33,23 @@
   }
   .header{
     display:flex;
-    align-items:baseline;
+    align-items:flex-start;
     justify-content:space-between;
     border-bottom:1px solid var(--line);
     padding-bottom:16px;
     margin-bottom:24px;
     flex-wrap:wrap;
+    gap:12px;
+  }
+  .theme-picker{
+    display:flex;
+    align-items:center;
     gap:8px;
+  }
+  .theme-picker label{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--muted);
   }
   .header h1{
     font-family:var(--mono);
@@ -61,7 +74,7 @@
   .step-label{
     display:inline-block;
     background:var(--accent);
-    color:#1f2a17;
+    color:var(--accent-ink);
     font-family:var(--mono);
     font-size:11px;
     font-weight:600;
@@ -89,7 +102,7 @@
     margin-top:10px;
   }
   .hint code{
-    background:#f7fbf1;
+    background:var(--input-bg);
     padding:1px 5px;
     border-radius:3px;
     color:var(--accent-dim);
@@ -103,7 +116,7 @@
   }
 
   input[type=text], textarea, select{
-    background:#f7fbf1;
+    background:var(--input-bg);
     border:1px solid var(--line);
     color:var(--ink);
     border-radius:4px;
@@ -127,7 +140,7 @@
   button{ cursor:pointer; font-family:var(--mono); }
   .btn-primary{
     background:var(--accent);
-    color:#1f2a17;
+    color:var(--accent-ink);
     border:none;
     border-radius:6px;
     padding:12px 22px;
@@ -137,7 +150,7 @@
     width:100%;
     margin-top:14px;
   }
-  .btn-primary:hover{ background:var(--accent-dim); color:#fff; }
+  .btn-primary:hover{ background:var(--accent-dim); color:var(--accent-hover-ink); }
   .btn-secondary{
     background:none;
     border:1px solid var(--line);
@@ -220,7 +233,7 @@
 
   /* Step 3 */
   .preview-box{
-    background:#fff;
+    background:var(--panel);
     border:1px solid var(--line);
     border-radius:6px;
     padding:16px;
@@ -238,8 +251,23 @@
 <body>
 
 <div class="header">
-  <h1>圖文合併工具</h1>
-  <div class="sub">step1 清理 → step2 標記 tag → step3 套用進文章</div>
+  <div>
+    <h1>圖文合併工具</h1>
+    <div class="sub">step1 清理 → step2 標記 tag → step3 套用進文章</div>
+    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-07-23 產生</div>
+  </div>
+  <div class="theme-picker">
+    <label for="themeSelect">主題色</label>
+    <select id="themeSelect">
+      <option value="green">🟢 綠</option>
+      <option value="red">🔴 紅</option>
+      <option value="orange">🟠 橙</option>
+      <option value="yellow">🟡 黃</option>
+      <option value="blue">🔵 藍</option>
+      <option value="black">⚫ 黑</option>
+      <option value="gray">⚪ 灰</option>
+    </select>
+  </div>
 </div>
 
 <!-- STEP 1 -->
@@ -298,6 +326,38 @@
 </div>
 
 <script>
+/* ---------------- Theme engine ---------------- */
+const THEMES = {
+  green:  { bg:'#f3faec', panel:'#ffffff', panel2:'#eaf5de', line:'#cfe3b8', ink:'#2e3b25', muted:'#6b8259', accent:'#7cb342', accentDim:'#5f9636', accentInk:'#1f2a17', accentHoverInk:'#ffffff', inputBg:'#f7fbf1', ok:'#4c8c3c', warn:'#c9611f' },
+  red:    { bg:'#faeeec', panel:'#ffffff', panel2:'#f6dcd7', line:'#e8b8ae', ink:'#3b2220', muted:'#8a5c53', accent:'#c0392b', accentDim:'#962c21', accentInk:'#ffffff', accentHoverInk:'#ffffff', inputBg:'#fdf3f1', ok:'#4c8c3c', warn:'#a83232' },
+  orange: { bg:'#fbf1e6', panel:'#ffffff', panel2:'#f7e3c8', line:'#e8c391', ink:'#3b2c17', muted:'#8a6c40', accent:'#d9822b', accentDim:'#b6681c', accentInk:'#2a1c0a', accentHoverInk:'#ffffff', inputBg:'#fdf6ec', ok:'#4c8c3c', warn:'#b6461c' },
+  yellow: { bg:'#fbf8e6', panel:'#ffffff', panel2:'#f5efc0', line:'#e3d585', ink:'#3a3517', muted:'#8a8140', accent:'#d4b426', accentDim:'#af9418', accentInk:'#2a2408', accentHoverInk:'#2a2408', inputBg:'#fdfbec', ok:'#4c8c3c', warn:'#c9611f' },
+  blue:   { bg:'#eaf1fa', panel:'#ffffff', panel2:'#d6e6f7', line:'#a9c8e8', ink:'#1e2c3b', muted:'#4f6b85', accent:'#2f6fb0', accentDim:'#25578c', accentInk:'#ffffff', accentHoverInk:'#ffffff', inputBg:'#f2f8fd', ok:'#2f7d5c', warn:'#c9611f' },
+  black:  { bg:'#14171a', panel:'#1c2024', panel2:'#24292e', line:'#343b41', ink:'#e6e6e3', muted:'#8a9199', accent:'#e0e0e0', accentDim:'#b8b8b8', accentInk:'#14171a', accentHoverInk:'#14171a', inputBg:'#20242a', ok:'#6fa97d', warn:'#d98a5c' },
+  gray:   { bg:'#eef0f1', panel:'#ffffff', panel2:'#dde1e3', line:'#c4cacd', ink:'#2b3033', muted:'#6b7377', accent:'#5c6a72', accentDim:'#48545a', accentInk:'#ffffff', accentHoverInk:'#ffffff', inputBg:'#f5f6f7', ok:'#4c8c3c', warn:'#c9611f' }
+};
+
+function applyTheme(name) {
+  const t = THEMES[name] || THEMES.green;
+  const root = document.documentElement.style;
+  root.setProperty('--bg', t.bg);
+  root.setProperty('--panel', t.panel);
+  root.setProperty('--panel-2', t.panel2);
+  root.setProperty('--line', t.line);
+  root.setProperty('--ink', t.ink);
+  root.setProperty('--muted', t.muted);
+  root.setProperty('--accent', t.accent);
+  root.setProperty('--accent-dim', t.accentDim);
+  root.setProperty('--accent-ink', t.accentInk);
+  root.setProperty('--accent-hover-ink', t.accentHoverInk);
+  root.setProperty('--input-bg', t.inputBg);
+  root.setProperty('--ok', t.ok);
+  root.setProperty('--warn', t.warn);
+}
+
+document.getElementById('themeSelect').onchange = (e) => applyTheme(e.target.value);
+applyTheme('green');
+
 /* ---------------- Utility ---------------- */
 function extractSizeCode(url) {
   const m = url.match(/\/(s\d+(?:-c)?|w\d+(?:-h\d+)?(?:-c)?)\//);
