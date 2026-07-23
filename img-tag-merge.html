@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>圖文合併工具</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #f3faec;
+    --panel: #ffffff;
+    --panel-2: #eaf5de;
+    --line: #cfe3b8;
+    --ink: #2e3b25;
+    --muted: #6b8259;
+    --accent: #7cb342;
+    --accent-dim: #5f9636;
+    --ok: #4c8c3c;
+    --warn: #c9611f;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    padding:28px 32px 60px;
+  }
+  .header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    border-bottom:1px solid var(--line);
+    padding-bottom:16px;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .header h1{
+    font-family:var(--mono);
+    font-size:19px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    margin:0;
+  }
+  .header .sub{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .step-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:22px;
+    margin-bottom:22px;
+  }
+  .step-label{
+    display:inline-block;
+    background:var(--accent);
+    color:#1f2a17;
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.06em;
+    padding:4px 10px;
+    border-radius:20px;
+    margin-bottom:14px;
+  }
+  .panel-title{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    margin:0 0 12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .hint{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--muted);
+    line-height:1.7;
+    margin-top:10px;
+  }
+  .hint code{
+    background:#f7fbf1;
+    padding:1px 5px;
+    border-radius:3px;
+    color:var(--accent-dim);
+  }
+  .next-hint{
+    font-family:var(--sans);
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:8px;
+    text-align:center;
+  }
+
+  input[type=text], textarea, select{
+    background:#f7fbf1;
+    border:1px solid var(--line);
+    color:var(--ink);
+    border-radius:4px;
+    padding:7px 9px;
+    font-family:var(--sans);
+    font-size:13px;
+    outline:none;
+  }
+  input[type=text]{ width:100%; }
+  textarea{
+    width:100%;
+    resize:vertical;
+    font-family:var(--mono);
+    font-size:12.5px;
+    line-height:1.6;
+    min-height:130px;
+  }
+  input[type=text]:focus, textarea:focus, select:focus{ border-color:var(--accent-dim); }
+  select{ font-family:var(--mono); font-size:12px; }
+
+  button{ cursor:pointer; font-family:var(--mono); }
+  .btn-primary{
+    background:var(--accent);
+    color:#1f2a17;
+    border:none;
+    border-radius:6px;
+    padding:12px 22px;
+    font-weight:600;
+    font-size:13.5px;
+    letter-spacing:0.02em;
+    width:100%;
+    margin-top:14px;
+  }
+  .btn-primary:hover{ background:var(--accent-dim); color:#fff; }
+  .btn-secondary{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--muted);
+    border-radius:5px;
+    padding:6px 12px;
+    font-size:11.5px;
+  }
+  .btn-secondary:hover{ border-color:var(--accent-dim); color:var(--ink); }
+  .btn-ghost{
+    background:none;
+    border:1px dashed var(--line);
+    color:var(--muted);
+    border-radius:5px;
+    padding:8px;
+    font-size:12px;
+    width:100%;
+    margin-top:6px;
+  }
+  .btn-ghost:hover{ border-color:var(--accent-dim); color:var(--ink); }
+  .del-btn{
+    background:none; border:none; color:var(--muted);
+    cursor:pointer; font-size:15px; padding:0 4px;
+  }
+  .del-btn:hover{ color:var(--warn); }
+
+  /* Step 1: image cards */
+  .global-bar{
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:6px;
+    padding:10px 12px; margin:14px 0;
+  }
+  .global-bar label{ font-family:var(--mono); font-size:11px; color:var(--muted); display:flex; align-items:center; gap:5px; }
+  .img-card{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:10px;
+    display:grid;
+    grid-template-columns: 56px 1fr;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .thumb2{
+    width:56px; height:56px;
+    border-radius:4px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--muted); font-size:18px;
+    flex-shrink:0;
+  }
+  .img-card .meta{ font-family:var(--mono); font-size:10.5px; color:var(--muted); margin-bottom:6px; }
+  .img-card .controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .img-card .controls label{ font-family:var(--mono); font-size:11px; color:var(--muted); display:flex; align-items:center; gap:4px; }
+
+  /* Step 2: tag rows */
+  .tag-row{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:10px;
+    display:grid;
+    grid-template-columns: 56px 1fr auto;
+    gap:12px;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .tag-row .url-line{
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--muted);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    margin-bottom:5px;
+  }
+  .tag-row .tag-input-wrap{ display:flex; align-items:center; gap:6px; }
+  .tag-row .tag-input-wrap label{ font-family:var(--mono); font-size:10px; color:var(--muted); flex-shrink:0; }
+
+  /* Step 3 */
+  .preview-box{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:16px;
+    margin-top:10px;
+    max-height:420px;
+    overflow-y:auto;
+    line-height:1.8;
+  }
+  .preview-box img{ max-width:100%; border-radius:4px; display:block; margin:10px 0; }
+  .preview-box h1, .preview-box h2, .preview-box h3{ font-family:var(--sans); color:var(--ink); }
+  .warn-list{ font-family:var(--mono); font-size:11px; color:var(--warn); margin-top:8px; }
+  .count-badge{ font-family:var(--mono); font-size:11px; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>圖文合併工具</h1>
+  <div class="sub">step1 清理 → step2 標記 tag → step3 套用進文章</div>
+</div>
+
+<!-- STEP 1 -->
+<div class="step-panel">
+  <div class="step-label">STEP 1 · 清理 Blogger 圖片 HTML</div>
+  <p class="panel-title">貼上 Blogger「HTML 檢視」的圖片標籤（可一次貼多張）</p>
+  <textarea id="rawHtmlInput" placeholder='貼上像這樣的內容：&#10;<div class="separator" ...><a href="..."><img src="..."/></a></div>'></textarea>
+  <button class="btn-secondary" id="parseBtn" style="margin-top:10px;">解析圖片 →</button>
+
+  <div id="imgCards" style="margin-top:14px;"></div>
+
+  <div class="global-bar" id="globalBar" style="display:none;">
+    <label>全部套用尺寸：</label>
+    <select id="globalSize">
+      <option value="s320">縮圖 s320</option>
+      <option value="s640">標準 s640</option>
+      <option value="s1600" selected>大圖 s1600</option>
+      <option value="s0">原始尺寸 s0</option>
+    </select>
+    <button class="btn-secondary" id="applySizeAll">套用到全部</button>
+    <label><input type="checkbox" id="globalRemoveLink" checked style="accent-color:var(--accent);"> 全部移除連結包裹</label>
+    <button class="btn-secondary" id="applyLinkAll">套用</button>
+  </div>
+
+  <button class="btn-primary" id="toStep2Btn">產生連結，帶到下一步：標記 Tag ↓</button>
+  <p class="next-hint">按下後，每張圖片會依這裡設定的尺寸/連結產生最終網址，自動出現在下方 STEP 2，你只需要去幫每張圖填 tag。</p>
+</div>
+
+<!-- STEP 2 -->
+<div class="step-panel">
+  <div class="step-label">STEP 2 · 幫每張圖片標記 Tag</div>
+  <p class="panel-title"><span>圖片清單</span><span class="count-badge" id="step2Count">0 張</span></p>
+  <div id="tagRows"></div>
+  <button class="btn-ghost" id="addManualRow">+ 手動新增一筆（沒經過 STEP 1 清理也能用）</button>
+  <p class="hint">Tag 是你自己取的名字，跟原始檔名無關。MD 裡對應寫成 <code>{{img:你取的tag}}</code>，下一步會自動置換成這裡的網址。</p>
+</div>
+
+<!-- STEP 3 -->
+<div class="step-panel">
+  <div class="step-label">STEP 3 · 套用進文章 MD</div>
+  <p class="panel-title">貼上文章 MD（含 {{img:tag}} 標記）</p>
+  <textarea id="mdInput" placeholder="貼上你的 MD 內容，含 {{img:tagname}} 標記..."></textarea>
+  <button class="btn-secondary" id="mergeBtn" style="margin-top:10px;">套用圖片 tag →</button>
+  <div class="warn-list" id="warnList"></div>
+
+  <div style="margin-top:14px;">
+    <button class="btn-secondary" id="previewToggleBtn">👁 預覽文章外觀（含圖片）</button>
+  </div>
+  <div id="mdPreview" class="preview-box" style="display:none;"></div>
+
+  <p class="panel-title" style="margin-top:18px;">合併後結果</p>
+  <textarea id="mdOutput" placeholder="按上面「套用圖片 tag」後，結果會顯示在這裡" readonly></textarea>
+
+  <button class="btn-primary" id="finalCopyBtn">✅ 複製這段內容 → 接下來貼到 StackEdit 檢查排版</button>
+  <p class="next-hint">複製後：打開 StackEdit，貼上確認排版跟圖片位置沒問題，再把最終內容貼到 Blogger 發布。</p>
+</div>
+
+<script>
+/* ---------------- Utility ---------------- */
+function extractSizeCode(url) {
+  const m = url.match(/\/(s\d+(?:-c)?|w\d+(?:-h\d+)?(?:-c)?)\//);
+  return m ? m[1] : 's1600';
+}
+function replaceSizeCode(url, newCode) {
+  return url.replace(/\/(s\d+(?:-c)?|w\d+(?:-h\d+)?(?:-c)?)\//, '/' + newCode + '/');
+}
+function makeThumb(src) {
+  const thumb = document.createElement('div');
+  thumb.className = 'thumb2';
+  thumb.textContent = '🖼';
+  const probe = new Image();
+  probe.onload = () => {
+    thumb.textContent = '';
+    thumb.style.background = `url("${src}") center/cover no-repeat`;
+  };
+  probe.onerror = () => {
+    thumb.textContent = '🖼';
+    thumb.title = '預覽無法載入（沙盒環境限制），不影響網址與合併結果';
+  };
+  probe.src = src;
+  return thumb;
+}
+
+/* ---------------- STEP 1 ---------------- */
+let imgItems = []; // { id, hadLink, src, alt, w, h, sizeCode, removeLink }
+
+document.getElementById('parseBtn').onclick = () => {
+  const raw = document.getElementById('rawHtmlInput').value;
+  const doc = new DOMParser().parseFromString(raw, 'text/html');
+  const imgs = doc.querySelectorAll('img');
+  imgItems = [];
+  let idCounter = 0;
+  imgs.forEach(img => {
+    const src = img.getAttribute('src') || '';
+    if (!src) return;
+    const parentA = img.closest('a');
+    imgItems.push({
+      id: idCounter++,
+      hadLink: !!parentA,
+      src: src,
+      alt: img.getAttribute('alt') || '',
+      w: img.getAttribute('data-original-width') || '',
+      h: img.getAttribute('data-original-height') || '',
+      sizeCode: extractSizeCode(src),
+      removeLink: false
+    });
+  });
+  renderImgCards();
+  document.getElementById('globalBar').style.display = imgItems.length ? 'flex' : 'none';
+};
+
+function renderImgCards() {
+  const wrap = document.getElementById('imgCards');
+  wrap.innerHTML = '';
+  imgItems.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'img-card';
+    card.appendChild(makeThumb(item.src));
+
+    const right = document.createElement('div');
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = (item.w && item.h) ? `${item.w}×${item.h}` : '尺寸未知';
+    right.appendChild(meta);
+
+    const controls = document.createElement('div');
+    controls.className = 'controls';
+
+    const sizeSelect = document.createElement('select');
+    ['s320','s640','s1600','s0'].forEach(code => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = {s320:'縮圖 s320', s640:'標準 s640', s1600:'大圖 s1600', s0:'原始尺寸 s0'}[code];
+      if (item.sizeCode === code) opt.selected = true;
+      sizeSelect.appendChild(opt);
+    });
+    sizeSelect.onchange = (e) => { item.sizeCode = e.target.value; };
+    controls.appendChild(sizeSelect);
+
+    const linkLabel = document.createElement('label');
+    const linkCheck = document.createElement('input');
+    linkCheck.type = 'checkbox';
+    linkCheck.style.accentColor = 'var(--accent)';
+    linkCheck.checked = item.removeLink;
+    linkCheck.disabled = !item.hadLink;
+    linkCheck.onchange = (e) => { item.removeLink = e.target.checked; };
+    linkLabel.appendChild(linkCheck);
+    linkLabel.appendChild(document.createTextNode(item.hadLink ? '移除連結包裹' : '（原本無連結）'));
+    controls.appendChild(linkLabel);
+
+    right.appendChild(controls);
+    card.appendChild(right);
+    wrap.appendChild(card);
+  });
+}
+
+document.getElementById('applySizeAll').onclick = () => {
+  const code = document.getElementById('globalSize').value;
+  imgItems.forEach(item => item.sizeCode = code);
+  renderImgCards();
+};
+document.getElementById('applyLinkAll').onclick = () => {
+  const remove = document.getElementById('globalRemoveLink').checked;
+  imgItems.forEach(item => { if (item.hadLink) item.removeLink = remove; });
+  renderImgCards();
+};
+
+/* ---------------- STEP 2 ---------------- */
+let tagRows = [];
+let tagRowId = 0;
+
+document.getElementById('toStep2Btn').onclick = () => {
+  tagRows = imgItems.map(item => ({
+    id: tagRowId++,
+    src: replaceSizeCode(item.src, item.sizeCode),
+    tag: ''
+  }));
+  renderTagRows();
+  document.getElementById('tagRows').scrollIntoView({behavior:'smooth', block:'start'});
+};
+
+function addManualTagRow() {
+  tagRows.push({ id: tagRowId++, src: '', tag: '' });
+  renderTagRows();
+}
+document.getElementById('addManualRow').onclick = addManualTagRow;
+
+function renderTagRows() {
+  const wrap = document.getElementById('tagRows');
+  document.getElementById('step2Count').textContent = tagRows.length + ' 張';
+  wrap.innerHTML = '';
+  tagRows.forEach(row => {
+    const card = document.createElement('div');
+    card.className = 'tag-row';
+    card.appendChild(makeThumb(row.src));
+
+    const mid = document.createElement('div');
+    const urlLine = document.createElement('div');
+    urlLine.className = 'url-line';
+    urlLine.title = row.src;
+    urlLine.textContent = row.src || '（尚未帶入網址，可手動貼上）';
+
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.placeholder = '圖片網址';
+    urlInput.value = row.src;
+    urlInput.style.marginBottom = '5px';
+    urlInput.style.fontSize = '10.5px';
+    urlInput.oninput = (e) => { row.src = e.target.value; };
+
+    const tagWrap = document.createElement('div');
+    tagWrap.className = 'tag-input-wrap';
+    tagWrap.innerHTML = '<label>tag</label>';
+    const tagInput = document.createElement('input');
+    tagInput.type = 'text';
+    tagInput.placeholder = '例如 narmer';
+    tagInput.value = row.tag;
+    tagInput.oninput = (e) => { row.tag = e.target.value; };
+    tagWrap.appendChild(tagInput);
+
+    mid.appendChild(urlInput);
+    mid.appendChild(tagWrap);
+    card.appendChild(mid);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del-btn';
+    delBtn.textContent = '✕';
+    delBtn.onclick = () => { tagRows = tagRows.filter(r => r.id !== row.id); renderTagRows(); };
+    card.appendChild(delBtn);
+
+    wrap.appendChild(card);
+  });
+}
+
+/* ---------------- STEP 3 ---------------- */
+document.getElementById('mergeBtn').onclick = () => {
+  const md = document.getElementById('mdInput').value;
+  const warnList = document.getElementById('warnList');
+  const missing = [];
+  let usedAny = false;
+
+  const merged = md.replace(/\{\{img:([a-zA-Z0-9_\-]+)\}\}/g, (match, tagName) => {
+    usedAny = true;
+    const r = tagRows.find(r => r.tag.trim() === tagName.trim());
+    if (r && r.src) {
+      return `![${tagName}](${r.src})`;
+    } else {
+      missing.push(tagName);
+      return match;
+    }
+  });
+
+  document.getElementById('mdOutput').value = merged;
+
+  if (missing.length > 0) {
+    warnList.textContent = '⚠ 找不到對應網址：' + missing.join(', ') + '（已保留原標記，回 STEP 2 補上 tag 後可重新套用）';
+  } else if (!usedAny) {
+    warnList.textContent = 'ℹ 這段 MD 裡沒有偵測到 {{img:tag}} 標記。';
+  } else {
+    warnList.textContent = '';
+  }
+
+  if (document.getElementById('mdPreview').style.display !== 'none') {
+    renderPreview(merged);
+  }
+};
+
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function mdToHtml(md){
+  let html = escapeHtml(md);
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+  html = html.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.*)$/gm, '<h1>$1</h1>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  const blocks = html.split(/\n{2,}/).map(b => {
+    const t = b.trim();
+    if (/^<h[1-3]>/.test(t) || /^<img/.test(t)) return b;
+    return '<p>' + b.replace(/\n/g,'<br>') + '</p>';
+  });
+  return blocks.join('\n');
+}
+
+document.getElementById('previewToggleBtn').onclick = () => {
+  const box = document.getElementById('mdPreview');
+  const showing = box.style.display !== 'none';
+  if (showing) {
+    box.style.display = 'none';
+  } else {
+    const content = document.getElementById('mdOutput').value || document.getElementById('mdInput').value;
+    renderPreview(content);
+    box.style.display = 'block';
+  }
+};
+function renderPreview(md) {
+  document.getElementById('mdPreview').innerHTML = mdToHtml(md);
+}
+
+document.getElementById('finalCopyBtn').onclick = () => {
+  const out = document.getElementById('mdOutput');
+  out.select();
+  document.execCommand('copy');
+  const btn = document.getElementById('finalCopyBtn');
+  const original = btn.textContent;
+  btn.textContent = '已複製 ✓ 接下來請打開 StackEdit 貼上';
+  setTimeout(() => { btn.textContent = original; }, 2200);
+};
+</script>
+
+</body>
+</html>

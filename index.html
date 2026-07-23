@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>BBQ 小工具站</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #f3faec;
+    --panel: #ffffff;
+    --panel-2: #eaf5de;
+    --line: #cfe3b8;
+    --ink: #2e3b25;
+    --muted: #6b8259;
+    --accent: #7cb342;
+    --accent-dim: #5f9636;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    padding:48px 24px 80px;
+  }
+  .wrap{ max-width:640px; margin:0 auto; }
+  .header{
+    border-bottom:1px solid var(--line);
+    padding-bottom:18px;
+    margin-bottom:28px;
+  }
+  .header h1{
+    font-family:var(--mono);
+    font-size:22px;
+    font-weight:600;
+    margin:0 0 6px;
+  }
+  .header .sub{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--muted);
+  }
+  .tool-card{
+    display:block;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:18px 20px;
+    margin-bottom:14px;
+    text-decoration:none;
+    color:inherit;
+    transition:border-color 0.15s;
+  }
+  .tool-card:hover{ border-color:var(--accent-dim); }
+  .tool-card .name{
+    font-family:var(--mono);
+    font-size:15px;
+    font-weight:600;
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .tool-card .name .arrow{ color:var(--accent); margin-left:auto; }
+  .tool-card .desc{
+    font-family:var(--sans);
+    font-size:13px;
+    color:var(--muted);
+    margin-top:6px;
+    line-height:1.6;
+  }
+  .empty-hint{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+    margin-top:30px;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>🍏 BBQ 小工具站</h1>
+    <div class="sub">個人自製工具集合 · 靜態頁面 · 無後端無帳號</div>
+  </div>
+
+  <a class="tool-card" href="./img-tag-merge.html">
+    <div class="name">圖文合併工具 <span class="arrow">→</span></div>
+    <div class="desc">清理 Blogger 上傳後的圖片 HTML、幫圖片標記 tag、把 tag 自動置換進文章 MD，最後產出可直接貼進 StackEdit 的內容。</div>
+  </a>
+
+  <div class="empty-hint">之後新增的工具會陸續列在這裡</div>
+</div>
+</body>
+</html>
