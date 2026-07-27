@@ -254,7 +254,7 @@
   <div>
     <h1>圖文合併工具</h1>
     <div class="sub">step1 清理 → step2 標記 tag → step3 套用進文章</div>
-    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-07-23 產生</div>
+    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-07-27 更新（含去重）</div>
   </div>
   <div class="theme-picker">
     <label for="themeSelect">主題色</label>
@@ -293,7 +293,7 @@
   </div>
 
   <button class="btn-primary" id="toStep2Btn">產生連結，帶到下一步：標記 Tag ↓</button>
-  <p class="next-hint">按下後，每張圖片會依這裡設定的尺寸/連結產生最終網址，自動出現在下方 STEP 2，你只需要去幫每張圖填 tag。</p>
+  <p class="next-hint">按下後，會依這裡設定的尺寸/連結產生網址，自動合併到下方 STEP 2——已經填過 tag 的舊圖片不會被清空，只有新圖片會多出空白列讓你填。</p>
 </div>
 
 <!-- STEP 2 -->
@@ -366,6 +366,9 @@ function extractSizeCode(url) {
 function replaceSizeCode(url, newCode) {
   return url.replace(/\/(s\d+(?:-c)?|w\d+(?:-h\d+)?(?:-c)?)\//, '/' + newCode + '/');
 }
+function baseKey(url) {
+  return url.replace(/\/(s\d+(?:-c)?|w\d+(?:-h\d+)?(?:-c)?)\//, '/SIZE/');
+}
 function makeThumb(src) {
   const thumb = document.createElement('div');
   thumb.className = 'thumb2';
@@ -392,9 +395,13 @@ document.getElementById('parseBtn').onclick = () => {
   const imgs = doc.querySelectorAll('img');
   imgItems = [];
   let idCounter = 0;
+  const seenKeys = new Set();
   imgs.forEach(img => {
     const src = img.getAttribute('src') || '';
     if (!src) return;
+    const key = baseKey(src);
+    if (seenKeys.has(key)) return; // skip duplicate image, keep the first occurrence
+    seenKeys.add(key);
     const parentA = img.closest('a');
     imgItems.push({
       id: idCounter++,
@@ -472,11 +479,16 @@ let tagRows = [];
 let tagRowId = 0;
 
 document.getElementById('toStep2Btn').onclick = () => {
-  tagRows = imgItems.map(item => ({
-    id: tagRowId++,
-    src: replaceSizeCode(item.src, item.sizeCode),
-    tag: ''
-  }));
+  imgItems.forEach(item => {
+    const finalSrc = replaceSizeCode(item.src, item.sizeCode);
+    const key = baseKey(finalSrc);
+    const existing = tagRows.find(r => baseKey(r.src) === key);
+    if (existing) {
+      existing.src = finalSrc; // keep the tag, just refresh the url in case size/link changed
+    } else {
+      tagRows.push({ id: tagRowId++, src: finalSrc, tag: '' });
+    }
+  });
   renderTagRows();
   document.getElementById('tagRows').scrollIntoView({behavior:'smooth', block:'start'});
 };
