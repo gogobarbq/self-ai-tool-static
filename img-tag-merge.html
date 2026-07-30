@@ -254,7 +254,7 @@
   <div>
     <h1>圖文合併工具</h1>
     <div class="sub">step1 清理 → step2 標記 tag → step3 套用進文章</div>
-    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-08-01 更新（顯示換算後尺寸預覽）</div>
+    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-08-01 更新（縮圖 hover 放大預覽）</div>
   </div>
   <div class="theme-picker">
     <label for="themeSelect">主題色</label>
@@ -399,6 +399,43 @@ function computeTargetSize(item) {
 function baseKey(url) {
   return url.replace(/\/(s\d+(?:-c)?|w\d+(?:-h\d+)?(?:-c)?)\//, '/SIZE/');
 }
+/* ---------------- Hover zoom preview ---------------- */
+let zoomPreview = null;
+function ensureZoomPreview() {
+  if (zoomPreview) return zoomPreview;
+  zoomPreview = document.createElement('div');
+  Object.assign(zoomPreview.style, {
+    position: 'fixed', zIndex: '9999', pointerEvents: 'none',
+    border: '2px solid var(--accent)', borderRadius: '8px',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.28)', background: 'var(--panel)',
+    padding: '5px', display: 'none'
+  });
+  const img = document.createElement('img');
+  Object.assign(img.style, { display: 'block', maxWidth: '380px', maxHeight: '380px', objectFit: 'contain', borderRadius: '4px' });
+  zoomPreview.appendChild(img);
+  document.body.appendChild(zoomPreview);
+  return zoomPreview;
+}
+function positionZoom(x, y) {
+  if (!zoomPreview) return;
+  const margin = 18, boxW = 390, boxH = 390;
+  let left = x + margin, top = y + margin;
+  if (left + boxW > window.innerWidth) left = Math.max(4, x - boxW - margin);
+  if (top + boxH > window.innerHeight) top = Math.max(4, window.innerHeight - boxH - margin);
+  zoomPreview.style.left = left + 'px';
+  zoomPreview.style.top = top + 'px';
+}
+function showZoom(src, x, y) {
+  if (!src) return;
+  const zp = ensureZoomPreview();
+  zp.querySelector('img').src = src;
+  zp.style.display = 'block';
+  positionZoom(x, y);
+}
+function hideZoom() {
+  if (zoomPreview) zoomPreview.style.display = 'none';
+}
+
 function makeThumb(src) {
   const thumb = document.createElement('div');
   thumb.className = 'thumb2';
@@ -413,6 +450,12 @@ function makeThumb(src) {
     thumb.title = '預覽無法載入（沙盒環境限制），不影響網址與合併結果';
   };
   probe.src = src;
+
+  thumb.style.cursor = src ? 'zoom-in' : 'default';
+  thumb.addEventListener('mouseenter', (e) => showZoom(src, e.clientX, e.clientY));
+  thumb.addEventListener('mousemove', (e) => positionZoom(e.clientX, e.clientY));
+  thumb.addEventListener('mouseleave', hideZoom);
+
   return thumb;
 }
 
