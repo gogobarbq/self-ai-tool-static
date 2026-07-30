@@ -254,7 +254,7 @@
   <div>
     <h1>圖文合併工具</h1>
     <div class="sub">step1 清理 → step2 標記 tag → step3 套用進文章</div>
-    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-08-01 更新（超連結固定連到原圖尺寸）</div>
+    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-08-01 更新（顯示換算後尺寸預覽）</div>
   </div>
   <div class="theme-picker">
     <label for="themeSelect">主題色</label>
@@ -286,7 +286,10 @@
       <option value="s640">標準 s640</option>
       <option value="s1600" selected>大圖 s1600</option>
       <option value="s0">原始尺寸 s0</option>
+      <option value="percent">依比例 %</option>
     </select>
+    <input type="text" id="globalPercent" value="50" style="width:50px; display:none;">
+    <span id="globalPercentLabel" style="display:none; font-family:var(--mono); font-size:11px; color:var(--muted);">%</span>
     <button class="btn-secondary" id="applySizeAll">套用到全部</button>
     <label><input type="checkbox" id="globalRemoveLink" checked style="accent-color:var(--accent);"> 全部移除連結包裹</label>
     <button class="btn-secondary" id="applyLinkAll">套用</button>
@@ -375,6 +378,24 @@ function extractSizeCode(url) {
 function replaceSizeCode(url, newCode) {
   return url.replace(/\/(s\d+(?:-c)?|w\d+(?:-h\d+)?(?:-c)?)\//, '/' + newCode + '/');
 }
+function replaceWithWidth(url, widthPx) {
+  return url.replace(/\/(s\d+(?:-c)?|w\d+(?:-h\d+)?(?:-c)?)\//, '/w' + widthPx + '/');
+}
+function computeTargetSize(item) {
+  const w = parseInt(item.w, 10), h = parseInt(item.h, 10);
+  if (!w || !h) return null;
+  let factor;
+  if (item.sizeMode === 'percent') {
+    factor = (item.sizePercent || 50) / 100;
+  } else if (item.sizeCode === 's0') {
+    factor = 1;
+  } else {
+    const target = parseInt(String(item.sizeCode).replace(/^s/, ''), 10) || 0;
+    const longEdge = Math.max(w, h);
+    factor = target > 0 ? Math.min(1, target / longEdge) : 1; // Blogger caps the long edge, doesn't upscale
+  }
+  return { w: Math.round(w * factor), h: Math.round(h * factor) };
+}
 function baseKey(url) {
   return url.replace(/\/(s\d+(?:-c)?|w\d+(?:-h\d+)?(?:-c)?)\//, '/SIZE/');
 }
@@ -420,6 +441,8 @@ document.getElementById('parseBtn').onclick = () => {
       w: img.getAttribute('data-original-width') || '',
       h: img.getAttribute('data-original-height') || '',
       sizeCode: extractSizeCode(src),
+      sizeMode: 'code',
+      sizePercent: 50,
       removeLink: false
     });
   });
@@ -438,22 +461,67 @@ function renderImgCards() {
     const right = document.createElement('div');
     const meta = document.createElement('div');
     meta.className = 'meta';
-    meta.textContent = (item.w && item.h) ? `${item.w}×${item.h}` : '尺寸未知';
+    meta.textContent = (item.w && item.h) ? `${item.w}×${item.h}` : '尺寸未知（無法用比例縮放，請改選固定尺寸）';
+
+    const targetLabel = document.createElement('div');
+    targetLabel.className = 'meta';
+    targetLabel.style.color = 'var(--accent-dim)';
+
+    function refreshTarget() {
+      const t = computeTargetSize(item);
+      targetLabel.textContent = t ? `→ 套用後約 ${t.w}×${t.h}` : '';
+    }
+    refreshTarget();
+
     right.appendChild(meta);
+    right.appendChild(targetLabel);
 
     const controls = document.createElement('div');
     controls.className = 'controls';
 
     const sizeSelect = document.createElement('select');
-    ['s320','s640','s1600','s0'].forEach(code => {
+    ['s320','s640','s1600','s0','percent'].forEach(code => {
       const opt = document.createElement('option');
       opt.value = code;
-      opt.textContent = {s320:'縮圖 s320', s640:'標準 s640', s1600:'大圖 s1600', s0:'原始尺寸 s0'}[code];
-      if (item.sizeCode === code) opt.selected = true;
+      opt.textContent = {s320:'縮圖 s320', s640:'標準 s640', s1600:'大圖 s1600', s0:'原始尺寸 s0', percent:'依比例 %'}[code];
+      if ((item.sizeMode === 'percent' && code === 'percent') || (item.sizeMode !== 'percent' && item.sizeCode === code)) opt.selected = true;
       sizeSelect.appendChild(opt);
     });
-    sizeSelect.onchange = (e) => { item.sizeCode = e.target.value; };
     controls.appendChild(sizeSelect);
+
+    const percentInput = document.createElement('input');
+    percentInput.type = 'text';
+    percentInput.value = item.sizePercent;
+    percentInput.style.width = '50px';
+    percentInput.style.display = item.sizeMode === 'percent' ? 'inline-block' : 'none';
+    percentInput.title = '原始寬度的百分比';
+    percentInput.oninput = (e) => {
+      const v = parseInt(e.target.value, 10);
+      item.sizePercent = (v > 0 && v <= 100) ? v : item.sizePercent;
+      refreshTarget();
+    };
+    const percentLabel = document.createElement('span');
+    percentLabel.textContent = '%';
+    percentLabel.style.fontFamily = 'var(--mono)';
+    percentLabel.style.fontSize = '11px';
+    percentLabel.style.color = 'var(--muted)';
+    percentLabel.style.display = item.sizeMode === 'percent' ? 'inline' : 'none';
+
+    sizeSelect.onchange = (e) => {
+      if (e.target.value === 'percent') {
+        item.sizeMode = 'percent';
+        percentInput.style.display = 'inline-block';
+        percentLabel.style.display = 'inline';
+      } else {
+        item.sizeMode = 'code';
+        item.sizeCode = e.target.value;
+        percentInput.style.display = 'none';
+        percentLabel.style.display = 'none';
+      }
+      refreshTarget();
+    };
+    controls.appendChild(percentInput);
+    controls.appendChild(percentLabel);
 
     const linkLabel = document.createElement('label');
     const linkCheck = document.createElement('input');
@@ -472,9 +540,19 @@ function renderImgCards() {
   });
 }
 
+document.getElementById('globalSize').onchange = (e) => {
+  const isPercent = e.target.value === 'percent';
+  document.getElementById('globalPercent').style.display = isPercent ? 'inline-block' : 'none';
+  document.getElementById('globalPercentLabel').style.display = isPercent ? 'inline' : 'none';
+};
 document.getElementById('applySizeAll').onclick = () => {
   const code = document.getElementById('globalSize').value;
-  imgItems.forEach(item => item.sizeCode = code);
+  if (code === 'percent') {
+    const pct = parseInt(document.getElementById('globalPercent').value, 10) || 50;
+    imgItems.forEach(item => { item.sizeMode = 'percent'; item.sizePercent = pct; });
+  } else {
+    imgItems.forEach(item => { item.sizeMode = 'code'; item.sizeCode = code; });
+  }
   renderImgCards();
 };
 document.getElementById('applyLinkAll').onclick = () => {
@@ -489,7 +567,13 @@ let tagRowId = 0;
 
 document.getElementById('toStep2Btn').onclick = () => {
   imgItems.forEach(item => {
-    const finalSrc = replaceSizeCode(item.src, item.sizeCode);
+    let finalSrc;
+    if (item.sizeMode === 'percent' && item.w) {
+      const targetW = Math.max(1, Math.round(parseInt(item.w, 10) * (item.sizePercent / 100)));
+      finalSrc = replaceWithWidth(item.src, targetW);
+    } else {
+      finalSrc = replaceSizeCode(item.src, item.sizeCode);
+    }
     const key = baseKey(finalSrc);
     const linked = item.hadLink && !item.removeLink;
     const existing = tagRows.find(r => baseKey(r.src) === key);
