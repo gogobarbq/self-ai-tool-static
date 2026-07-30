@@ -254,7 +254,7 @@
   <div>
     <h1>圖文合併工具</h1>
     <div class="sub">step1 清理 → step2 標記 tag → step3 套用進文章</div>
-    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-07-27 更新（含去重）</div>
+    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-08-01 更新（超連結固定連到原圖尺寸）</div>
   </div>
   <div class="theme-picker">
     <label for="themeSelect">主題色</label>
@@ -310,6 +310,15 @@
   <div class="step-label">STEP 3 · 套用進文章 MD</div>
   <p class="panel-title">貼上文章 MD（含 {{img:tag}} 標記）</p>
   <textarea id="mdInput" placeholder="貼上你的 MD 內容，含 {{img:tagname}} 標記..."></textarea>
+  <div class="global-bar" style="margin-top:12px;">
+    <label>圖片外框：</label>
+    <select id="borderStyle">
+      <option value="none">無外框</option>
+      <option value="thin">細灰框</option>
+      <option value="shadow">陰影框</option>
+      <option value="rounded">圓角框</option>
+    </select>
+  </div>
   <button class="btn-secondary" id="mergeBtn" style="margin-top:10px;">套用圖片 tag →</button>
   <div class="warn-list" id="warnList"></div>
 
@@ -482,11 +491,13 @@ document.getElementById('toStep2Btn').onclick = () => {
   imgItems.forEach(item => {
     const finalSrc = replaceSizeCode(item.src, item.sizeCode);
     const key = baseKey(finalSrc);
+    const linked = item.hadLink && !item.removeLink;
     const existing = tagRows.find(r => baseKey(r.src) === key);
     if (existing) {
-      existing.src = finalSrc; // keep the tag, just refresh the url in case size/link changed
+      existing.src = finalSrc; // keep the tag, just refresh the url/link setting
+      existing.linked = linked;
     } else {
-      tagRows.push({ id: tagRowId++, src: finalSrc, tag: '' });
+      tagRows.push({ id: tagRowId++, src: finalSrc, tag: '', linked: linked });
     }
   });
   renderTagRows();
@@ -494,7 +505,7 @@ document.getElementById('toStep2Btn').onclick = () => {
 };
 
 function addManualTagRow() {
-  tagRows.push({ id: tagRowId++, src: '', tag: '' });
+  tagRows.push({ id: tagRowId++, src: '', tag: '', linked: false });
   renderTagRows();
 }
 document.getElementById('addManualRow').onclick = addManualTagRow;
@@ -532,8 +543,25 @@ function renderTagRows() {
     tagInput.oninput = (e) => { row.tag = e.target.value; };
     tagWrap.appendChild(tagInput);
 
+    const linkWrap = document.createElement('label');
+    linkWrap.style.fontFamily = 'var(--mono)';
+    linkWrap.style.fontSize = '10.5px';
+    linkWrap.style.color = 'var(--muted)';
+    linkWrap.style.display = 'flex';
+    linkWrap.style.alignItems = 'center';
+    linkWrap.style.gap = '4px';
+    linkWrap.style.marginTop = '5px';
+    const linkCheck = document.createElement('input');
+    linkCheck.type = 'checkbox';
+    linkCheck.style.accentColor = 'var(--accent)';
+    linkCheck.checked = !!row.linked;
+    linkCheck.onchange = (e) => { row.linked = e.target.checked; };
+    linkWrap.appendChild(linkCheck);
+    linkWrap.appendChild(document.createTextNode('點圖可連到原圖（保留超連結）'));
+
     mid.appendChild(urlInput);
     mid.appendChild(tagWrap);
+    mid.appendChild(linkWrap);
     card.appendChild(mid);
 
     const delBtn = document.createElement('button');
@@ -547,9 +575,30 @@ function renderTagRows() {
 }
 
 /* ---------------- STEP 3 ---------------- */
+const BORDER_STYLES = {
+  none: '',
+  thin: 'border:1px solid #ccc;',
+  shadow: 'box-shadow:0 2px 8px rgba(0,0,0,0.18);',
+  rounded: 'border:1px solid #ccc;border-radius:8px;'
+};
+
+function imageMarkup(tagName, row, borderCss) {
+  const fullSrc = replaceSizeCode(row.src, 's0'); // link always points to the original size
+  const imgTag = borderCss
+    ? `<img src="${row.src}" alt="${tagName}" style="${borderCss}">`
+    : `![${tagName}](${row.src})`;
+  if (row.linked) {
+    return borderCss
+      ? `<a href="${fullSrc}">${imgTag}</a>`
+      : `[${imgTag}](${fullSrc})`;
+  }
+  return imgTag;
+}
+
 document.getElementById('mergeBtn').onclick = () => {
   const md = document.getElementById('mdInput').value;
   const warnList = document.getElementById('warnList');
+  const borderCss = BORDER_STYLES[document.getElementById('borderStyle').value] || '';
   const missing = [];
   let usedAny = false;
 
@@ -557,7 +606,7 @@ document.getElementById('mergeBtn').onclick = () => {
     usedAny = true;
     const r = tagRows.find(r => r.tag.trim() === tagName.trim());
     if (r && r.src) {
-      return `![${tagName}](${r.src})`;
+      return imageMarkup(tagName, r, borderCss);
     } else {
       missing.push(tagName);
       return match;
@@ -581,7 +630,12 @@ document.getElementById('mergeBtn').onclick = () => {
 
 function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function mdToHtml(md){
-  let html = escapeHtml(md);
+  const stash = [];
+  const protectedMd = md.replace(/<a href="[^"]*">[\s\S]*?<\/a>|<img[^>]*>/g, (m) => {
+    stash.push(m);
+    return `\u0000${stash.length - 1}\u0000`;
+  });
+  let html = escapeHtml(protectedMd);
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
   html = html.replace(/^### (.*)$/gm, '<h3>$1</h3>');
   html = html.replace(/^## (.*)$/gm, '<h2>$1</h2>');
@@ -590,10 +644,12 @@ function mdToHtml(md){
   html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
   const blocks = html.split(/\n{2,}/).map(b => {
     const t = b.trim();
-    if (/^<h[1-3]>/.test(t) || /^<img/.test(t)) return b;
+    if (/^<h[1-3]>/.test(t) || /^<img/.test(t) || /^\u0000\d+\u0000$/.test(t)) return b;
     return '<p>' + b.replace(/\n/g,'<br>') + '</p>';
   });
-  return blocks.join('\n');
+  let result = blocks.join('\n');
+  result = result.replace(/\u0000(\d+)\u0000/g, (m, idx) => stash[idx]);
+  return result;
 }
 
 document.getElementById('previewToggleBtn').onclick = () => {
