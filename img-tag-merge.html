@@ -71,6 +71,51 @@
     padding:22px;
     margin-bottom:22px;
   }
+
+  .restore-panel{
+    background:repeating-linear-gradient(135deg, var(--panel-2), var(--panel-2) 10px, var(--panel) 10px, var(--panel) 20px);
+    border:2px dashed var(--muted);
+    border-radius:8px;
+    padding:0;
+    margin-bottom:28px;
+  }
+  .restore-summary{
+    cursor:pointer;
+    list-style:none;
+    padding:16px 20px;
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    font-family:var(--mono);
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink);
+    user-select:none;
+  }
+  .restore-summary::-webkit-details-marker{ display:none; }
+  .restore-summary::before{
+    content:'▶';
+    font-size:10px;
+    color:var(--muted);
+    margin-right:2px;
+    transition:transform 0.15s;
+  }
+  .restore-panel[open] .restore-summary::before{ transform:rotate(90deg); }
+  .restore-icon{ font-size:16px; }
+  .restore-sub{
+    font-family:var(--sans);
+    font-weight:400;
+    font-size:12px;
+    color:var(--muted);
+    margin-left:4px;
+  }
+  .restore-body{
+    padding:0 20px 20px;
+    border-top:1px dashed var(--line);
+    margin-top:2px;
+    padding-top:16px;
+  }
+
   .step-label{
     display:inline-block;
     background:var(--accent);
@@ -254,7 +299,7 @@
   <div>
     <h1>圖文合併工具</h1>
     <div class="sub">step1 清理 → step2 標記 tag → step3 套用進文章</div>
-    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-08-01 更新（縮圖 hover 放大預覽）</div>
+    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-08-01 更新（舊稿還原區獨立樣式）</div>
   </div>
   <div class="theme-picker">
     <label for="themeSelect">主題色</label>
@@ -269,6 +314,21 @@
     </select>
   </div>
 </div>
+
+<!-- RESTORE -->
+<details class="restore-panel" id="restorePanel">
+  <summary class="restore-summary">
+    <span class="restore-icon">🔄</span>
+    <span>從舊稿接續<span class="restore-sub">（換電腦 / 隔天繼續時才需要，點這裡展開 — 全新文章請直接往下滑到 STEP 1）</span></span>
+  </summary>
+  <div class="restore-body">
+    <p class="panel-title">貼上「已經套過圖的 MD」或「Blogger 最終 HTML」，自動重建 tag 清單跟可編輯樣板</p>
+    <textarea id="restoreInput" style="min-height:110px;" placeholder="貼上 StackEdit 裡已套圖的 MD 內容，或是 Blogger 文章的 HTML 原始碼..."></textarea>
+    <button class="btn-secondary" id="restoreBtn" style="margin-top:10px;">解析並還原 →</button>
+    <div class="warn-list" id="restoreStatus" style="color:var(--ok);"></div>
+    <p class="hint">原理：工具產生圖片時，你填的 tag 會被保留在 alt 屬性（或 markdown 的 alt 文字）裡，所以就算只剩下最終稿，也能反推回 tag 對照表跟 <code>{{img:tag}}</code> 樣板，帶到下面 STEP2、STEP3 繼續編輯。</p>
+  </div>
+</details>
 
 <!-- STEP 1 -->
 <div class="step-panel">
@@ -369,6 +429,76 @@ function applyTheme(name) {
 
 document.getElementById('themeSelect').onchange = (e) => applyTheme(e.target.value);
 applyTheme('green');
+
+/* ---------------- Restore from existing draft ---------------- */
+function getAttrVal(tagStr, name) {
+  const m = tagStr.match(new RegExp(name + '="([^"]*)"'));
+  return m ? m[1] : '';
+}
+
+document.getElementById('restoreBtn').onclick = () => {
+  let text = document.getElementById('restoreInput').value;
+  const pairs = [];
+  let autoIdx = 1;
+
+  function nextAutoTag() { return 'img' + (autoIdx++); }
+
+  // Pass 1: linked raw HTML images  <a href="..."><img ... alt="X" ... src="Y" ...></a>
+  text = text.replace(/<a\s+href="[^"]*"[^>]*>\s*(<img\b[^>]*>)\s*<\/a>/gi, (whole, imgTag) => {
+    const alt = getAttrVal(imgTag, 'alt') || nextAutoTag();
+    const src = getAttrVal(imgTag, 'src');
+    if (!src) return whole;
+    pairs.push({ tag: alt, src });
+    return `{{img:${alt}}}`;
+  });
+
+  // Pass 2: bare raw HTML images <img ... alt="X" ... src="Y" ...>
+  text = text.replace(/<img\b[^>]*>/gi, (whole) => {
+    const alt = getAttrVal(whole, 'alt') || nextAutoTag();
+    const src = getAttrVal(whole, 'src');
+    if (!src) return whole;
+    pairs.push({ tag: alt, src });
+    return `{{img:${alt}}}`;
+  });
+
+  // Pass 3: linked markdown images  [![alt](src)](href)
+  text = text.replace(/\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/g, (whole, alt, src) => {
+    const tag = alt || nextAutoTag();
+    pairs.push({ tag, src });
+    return `{{img:${tag}}}`;
+  });
+
+  // Pass 4: bare markdown images ![alt](src)
+  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (whole, alt, src) => {
+    const tag = alt || nextAutoTag();
+    pairs.push({ tag, src });
+    return `{{img:${tag}}}`;
+  });
+
+  const status = document.getElementById('restoreStatus');
+  if (pairs.length === 0) {
+    status.style.color = 'var(--warn)';
+    status.textContent = '⚠ 沒有偵測到任何圖片，確認貼的內容裡有 markdown ![]() 或 <img> 標籤。';
+    return;
+  }
+
+  pairs.forEach(p => {
+    const key = baseKey(p.src);
+    const existing = tagRows.find(r => baseKey(r.src) === key);
+    if (existing) {
+      existing.tag = p.tag; // trust the restored tag as the authoritative one
+      existing.src = p.src;
+    } else {
+      tagRows.push({ id: tagRowId++, src: p.src, tag: p.tag, linked: false });
+    }
+  });
+  renderTagRows();
+
+  document.getElementById('mdInput').value = text;
+
+  status.style.color = 'var(--ok)';
+  status.textContent = `✅ 還原成功：找到 ${pairs.length} 張圖片，tag 清單已重建到 STEP2，可編輯樣板已帶入 STEP3，確認無誤後可重新「套用圖片 tag」。`;
+};
 
 /* ---------------- Utility ---------------- */
 function extractSizeCode(url) {
