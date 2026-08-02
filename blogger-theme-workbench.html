@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Theme 工作台 v2.3｜Blogger Theme Workbench</title>
+<title>Theme 工作台 v2.5｜Blogger Theme Workbench</title>
 <style>
 :root{--bg:#f3f5f7;--panel:#fff;--panel2:#f8fafb;--text:#17202a;--muted:#687384;--line:#d9e0e7;--accent:#245c4f;--accent2:#e7f2ee;--danger:#a33a3a;--ok:#17704a;--shadow:0 12px 32px rgb(17 24 39/.08);--r:14px}
 @media(prefers-color-scheme:dark){:root{--bg:#11161b;--panel:#182027;--panel2:#202a32;--text:#edf2f7;--muted:#aab4bf;--line:#34414b;--accent:#7bc4b0;--accent2:#203b35;--danger:#ff9a9a;--ok:#83d7ae;--shadow:none}}
@@ -31,49 +31,167 @@
 .component-preview .aC{padding:8px 0 2px;color:#53606d}
 @media(max-width:850px){.component-grid{grid-template-columns:1fr}}
 
+
+.component-preview .nc-accordion{margin:1em 0;border-top:1px solid #d9e0e7;border-bottom:1px solid #d9e0e7}
+.component-preview .nc-accordion-title{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:1.1em 0;border:0;background:transparent;color:inherit;font:inherit;font-weight:700;text-align:left;cursor:pointer}
+.component-preview .nc-accordion-title:after{content:'❯';font-size:small;transform:rotate(90deg)}
+.component-preview .nc-accordion.open .nc-accordion-title:after{transform:rotate(-90deg)}
+.component-preview .nc-accordion-content{display:none;padding:0 0 1.1em}
+.component-preview .nc-accordion.open .nc-accordion-content{display:block}
+
+.component-preview .nc-youtube{position:relative;width:100%;aspect-ratio:16/9;margin:1em 0;overflow:hidden;background:#000}
+.component-preview .nc-youtube iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 </style>
 </head>
 <body>
-<header class="top"><div class="brand"><h1>Theme 工作台 v2.3</h1><p>Blogger Theme Workbench · 最後修改：2026-08-01（Median 原生元件辨識）</p></div><div class="actions"><button class="btn" id="newBtn" disabled>載入另一份 Theme</button><button class="btn" id="validateBtn" disabled>檢查完整 Theme</button><button class="btn" id="copyBtn" disabled>複製完整 Theme</button><button class="btn primary" id="downloadBtn" disabled>下載完整 Theme</button></div></header>
+<header class="top"><div class="brand"><h1>Theme 工作台 v2.5</h1><p>Blogger Theme Workbench · 最後修改：2026-08-02（NC Accordion／YouTube 安裝器）</p></div><div class="actions"><button class="btn" id="newBtn" disabled>載入另一份 Theme</button><button class="btn" id="validateBtn" disabled>檢查完整 Theme</button><button class="btn" id="copyBtn" disabled>複製完整 Theme</button><button class="btn primary" id="downloadBtn" disabled>下載完整 Theme</button></div></header>
 <main>
 <section class="welcome" id="welcome"><div class="hero"><article class="card intro"><h2>只顯示你真的會改的地方。</h2><p>貼入完整 Blogger Theme。工作台會保留原始 XML，只把主選單、文章字體、段落間距、分隔線與引用區塊整理成人看得懂的設定，並辨識 Theme 內已存在的 Median UI 文章元件。輸出時以局部 Patch 放回原始 Theme，不重寫其他程式。</p><div class="promise"><div><strong>會修改</strong><span>Main Menu 與目前畫面中列出的外觀值。文章元件頁只做辨識，不另裝一套 CSS。</span></div><div><strong>不會修改</strong><span>JavaScript、其他 Widgets、未顯示的 CSS 與 Blogger 系統設定。</span></div><div><strong>資料位置</strong><span>只在目前瀏覽器分頁處理，不會上傳。</span></div><div><strong>輸出方式</strong><span>複製或下載重新組裝後的完整 Theme XML。</span></div></div></article><section class="card"><h3 style="margin-top:0">貼上 Blogger Theme</h3><p style="color:var(--muted);font-size:14px;line-height:1.55">可從 Blogger Theme 編輯器全選複製，也可開啟已下載的 XML。</p><textarea id="sourceInput" spellcheck="false" placeholder="請貼上完整 Blogger Theme…"></textarea><div class="row" style="margin-top:12px"><button class="btn primary" id="analyzeBtn">讀取 Theme</button><label class="file">或開啟 Theme 檔<input id="fileInput" type="file" accept=".xml,.txt,.html,.css,text/xml,application/xml,text/plain"></label></div><div class="hint">建議先在 Blogger 後台備份目前 Theme。工作台會在輸出前檢查完整 XML，但實際套用後仍應先預覽網站。</div></section></div></section>
 <section class="workspace" id="workspace"><div class="overview"><div class="metric"><strong id="menuCount">0</strong><span>辨識到的主選單</span></div><div class="metric"><strong id="styleCount">0</strong><span>可調整的外觀設定</span></div><div class="metric"><strong id="changeCount">0</strong><span>目前變更</span></div></div><div class="layout"><nav class="nav"><button class="active" data-pane="menu">選單管理<small>名稱、連結、排序</small></button><button data-pane="style">文章外觀<small>字體、段落、引用</small></button><button data-pane="components">文章元件<small>Median 原生元件辨識</small></button><button data-pane="output">輸出與檢查<small>摘要、完整 Theme</small></button></nav><div>
 <section class="pane active" id="pane-menu"><div class="pane-head"><div><h2>主選單</h2><p>只重建 Main Menu 內的下拉選單；首頁按鈕與整個 Widget 外框保持原樣。</p></div><div class="right"><button class="btn primary" id="addMenuBtn">新增主選單</button></div></div><div id="menuNotice" class="notice"></div><div id="menuList" style="margin-top:12px"></div></section>
 <section class="pane" id="pane-style"><div class="pane-head"><div><h2>文章外觀</h2><p>每項設定都對應到目前 Theme 中的明確變數或 CSS 規則。</p></div></div><div id="styleNotice" class="notice"></div><div class="style-grid" id="styleGrid" style="margin-top:12px"></div><div class="section" style="margin-top:14px"><div class="section-title">即時示意</div><div class="section-body"><article class="preview" id="preview"><h1>這是一篇文章的標題</h1><p>這是一段文章內文，用來觀察字體大小、行高與段落之間的距離。</p><blockquote>這是一段引用文字。你可以調整它的大小、粗細、斜體、內距與左側線條。</blockquote><hr><p>分隔線之後的另一段文字。</p></article></div></div></section>
 
-<section class="pane" id="pane-components">
-  <div class="pane-head">
-    <div>
-      <h2>Median 原生文章元件</h2>
-      <p>這裡只檢查載入的 Theme 是否已有 Median UI 官方元件樣式，不會安裝另一套 Callout CSS，也不會改動 Theme。</p>
-    </div>
-  </div>
-  <div id="componentNotice" class="notice">載入 Theme 後，工作台會檢查 Note、Warning、Accordion 與 Reference 等第一批元件。</div>
-  <div class="component-grid" id="componentGrid" style="margin-top:12px"></div>
-  <div class="section" style="margin-top:14px">
-    <div class="section-title">結構示意（實際外觀由你的 Median Theme 決定）</div>
-    <div class="section-body">
-      <article class="component-preview">
-        <p class="note">這是 Median 的標準 Note block。</p>
-        <p class="note wr"><b>Warning</b><br>這是 Median 的 Warning note。</p>
-        <details class="ac" open><summary>更多背景</summary><div class="aC"><p>這是 Accordion 展開後的內容。</p></div></details>
-        <div class="pRef"><b>Source:</b><br>參考資料或文章註腳。</div>
-      </article>
-    </div>
-  </div>
-  <div class="notice" style="margin-top:14px">
-    Blogger Compiler 之後會把 NC Markdown 標記轉成這些原生結構，例如 <code>{{note}}…{{end}}</code> → <code>&lt;p class='note'&gt;…&lt;/p&gt;</code>。Hyperlink 與 YouTube 仍由 Compiler 處理，不屬於 Theme Workbench。
-  </div>
-</section>
 
+<section class="pane" id="pane-components">
+  <div class="pane-head"><div><h2>文章元件</h2><p>辨識 Median 原生元件，也可以安裝適合 StackEdit → Blogger 流程的 NC Accordion。</p></div></div>
+
+  <div class="section">
+    <div class="section-title">NC Accordion（可收合內容）</div>
+    <div class="section-body">
+      <label style="display:flex;gap:9px;align-items:flex-start">
+        <input type="checkbox" id="accordionEnabled" style="margin-top:3px">
+        <span><strong>在 Theme 安裝／更新 NC Accordion</strong><br><small style="color:var(--muted)">改用 Blogger 會保留的 div／button 結構，由 Theme CSS 與 JavaScript 控制收合。</small></span>
+      </label>
+      <div id="accordionStatus" class="notice" style="margin-top:12px"></div>
+      <div class="component-preview" style="margin-top:12px">
+        <div class="nc-accordion open">
+          <button class="nc-accordion-title" type="button" aria-expanded="true">更多背景</button>
+          <div class="nc-accordion-content"><p>這是點擊標題後展開的內容。</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">NC YouTube（16:9 響應式影片）</div>
+    <div class="section-body">
+      <label style="display:flex;gap:9px;align-items:flex-start">
+        <input type="checkbox" id="youtubeEnabled" style="margin-top:3px">
+        <span><strong>在 Theme 安裝／更新 NC YouTube</strong><br><small style="color:var(--muted)">影片比例改由 Theme CSS 控制，避免 StackEdit／Blogger 清除 inline style 後變成扁長畫面。</small></span>
+      </label>
+      <div id="youtubeStatus" class="notice" style="margin-top:12px"></div>
+      <div class="component-preview" style="margin-top:12px">
+        <div class="nc-youtube">
+          <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube 預覽" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="componentNotice" class="notice">載入 Theme 後，工作台會檢查第一批 Median 原生元件。</div>
+  <div class="component-grid" id="componentGrid" style="margin-top:12px"></div>
+  <div class="notice" style="margin-top:14px">Compiler 會把 <code>{{accordion title="更多背景"}}…{{end}}</code> 轉成 <code>.nc-accordion</code>。Hyperlink 與 YouTube 仍由 Compiler 處理。</div>
+</section>
 <section class="pane" id="pane-output"><div class="pane-head"><div><h2>輸出完整 Theme</h2><p>所有變更都會重新從原始 Theme 套用，避免多次修改造成位置偏移。</p></div></div><div class="section"><div class="section-title">本次修改</div><div class="section-body"><ul class="changes" id="changeList"></ul></div></div><div class="section"><div class="section-title">安全檢查</div><div class="section-body"><div id="validationResult" class="notice">尚未執行完整 XML 檢查。</div><div class="row" style="margin-top:12px"><button class="btn" id="validateInsideBtn">檢查完整 Theme</button><button class="btn" id="showXmlBtn">查看完整 Theme</button><button class="btn danger" id="resetBtn">還原所有修改</button></div></div></div><div class="section"><div class="section-title">輸出</div><div class="section-body"><div class="notice">輸出內容包含原始完整 Theme，加上你在工作台中設定的局部修改。其他 JavaScript、Widgets 與 CSS 不會重新產生。</div><div class="row" style="margin-top:12px"><button class="btn" id="copyInsideBtn">複製完整 Theme</button><button class="btn primary" id="downloadInsideBtn">下載 XML</button></div></div></div></section>
 </div></div></section>
 </main><div class="toast" id="toast"></div><dialog id="xmlDialog"><h3 style="margin-top:0">完整 Theme XML</h3><div class="code" id="xmlCode"></div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="xmlDialog.close()">關閉</button></div></dialog>
 <script>
 (()=>{'use strict';
 const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
-const state={original:'',filename:'blogger-theme.xml',menuRegion:null,menus:[],originalMenus:[],styles:{},originalStyles:{},nativeComponents:{},output:'',changes:[]};
+const state={original:'',filename:'blogger-theme.xml',menuRegion:null,menus:[],originalMenus:[],styles:{},originalStyles:{},nativeComponents:{},accordionEnabled:false,originalAccordionEnabled:false,youtubeEnabled:false,originalYoutubeEnabled:false,output:'',changes:[]};
 const genericIcon="<svg class='line' viewBox='0 0 24 24'><circle cx='12' cy='12' r='9'/><path d='M8 12h8'/></svg>";
+
+
+const NC_ACCORDION_CSS_START='/* NC ACCORDION CSS START */';
+const NC_ACCORDION_CSS_END='/* NC ACCORDION CSS END */';
+const NC_ACCORDION_JS_START='<!-- NC ACCORDION JS START -->';
+const NC_ACCORDION_JS_END='<!-- NC ACCORDION JS END -->';
+
+const NC_ACCORDION_CSS=`${NC_ACCORDION_CSS_START}
+.nc-accordion{margin:1.7em 0;border-top:1px solid var(--contentL,#e5e7eb);border-bottom:1px solid var(--contentL,#e5e7eb)}
+.nc-accordion-title{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:1.25em 0;border:0;background:transparent;color:inherit;font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.nc-accordion-title::after{content:'❯';flex-shrink:0;font-size:small;transform:rotate(90deg);transition:transform .2s ease}
+.nc-accordion.open .nc-accordion-title::after{transform:rotate(-90deg)}
+.nc-accordion-content{display:none;padding:0 0 1.25em}
+.nc-accordion.open .nc-accordion-content{display:block}
+.nc-accordion-content>:first-child{margin-top:0}
+.nc-accordion-content>:last-child{margin-bottom:0}
+${NC_ACCORDION_CSS_END}`;
+
+const NC_ACCORDION_JS=`${NC_ACCORDION_JS_START}
+<script>
+//<![CDATA[
+document.addEventListener('click',function(e){
+  var btn=e.target.closest('.nc-accordion-title');
+  if(!btn)return;
+  var root=btn.closest('.nc-accordion');
+  if(!root)return;
+  var open=root.classList.toggle('open');
+  btn.setAttribute('aria-expanded',open?'true':'false');
+});
+//]]>
+<\/script>
+${NC_ACCORDION_JS_END}`;
+
+function hasNcAccordion(text){
+  return text.includes(NC_ACCORDION_CSS_START)&&text.includes(NC_ACCORDION_JS_START);
+}
+function removeMarkedBlock(text,start,end){
+  const s=text.indexOf(start);
+  if(s<0)return text;
+  const e=text.indexOf(end,s);
+  return e<0?text:text.slice(0,s)+text.slice(e+end.length);
+}
+function applyNcAccordion(text,enabled){
+  let out=removeMarkedBlock(text,NC_ACCORDION_CSS_START,NC_ACCORDION_CSS_END);
+  out=removeMarkedBlock(out,NC_ACCORDION_JS_START,NC_ACCORDION_JS_END);
+  if(!enabled)return out;
+  const skinClose=out.indexOf('</b:skin>');
+  if(skinClose>=0)out=out.slice(0,skinClose)+'\n'+NC_ACCORDION_CSS+'\n'+out.slice(skinClose);
+  const bodyClose=out.lastIndexOf('</body>');
+  if(bodyClose>=0)out=out.slice(0,bodyClose)+'\n'+NC_ACCORDION_JS+'\n'+out.slice(bodyClose);
+  return out;
+}
+function renderAccordionInstaller(){
+  const cb=$('#accordionEnabled');
+  if(!cb)return;
+  cb.checked=state.accordionEnabled;
+  const box=$('#accordionStatus');
+  box.className='notice '+(state.accordionEnabled?'ok':'');
+  box.textContent=state.accordionEnabled
+    ? '輸出時會安裝／更新 NC Accordion CSS 與 JavaScript。'
+    : '目前不安裝 NC Accordion。勾選後，所有使用 .nc-accordion 的文章即可收合。';
+}
+
+
+const NC_YOUTUBE_CSS_START='/* NC YOUTUBE CSS START */';
+const NC_YOUTUBE_CSS_END='/* NC YOUTUBE CSS END */';
+
+const NC_YOUTUBE_CSS=`${NC_YOUTUBE_CSS_START}
+.nc-youtube{position:relative;width:100%;aspect-ratio:16/9;margin:1.5em 0;overflow:hidden;background:#000}
+.nc-youtube iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+${NC_YOUTUBE_CSS_END}`;
+
+function hasNcYoutube(text){
+  return text.includes(NC_YOUTUBE_CSS_START);
+}
+function applyNcYoutube(text,enabled){
+  let out=removeMarkedBlock(text,NC_YOUTUBE_CSS_START,NC_YOUTUBE_CSS_END);
+  if(!enabled)return out;
+  const skinClose=out.indexOf('</b:skin>');
+  if(skinClose>=0)out=out.slice(0,skinClose)+'\n'+NC_YOUTUBE_CSS+'\n'+out.slice(skinClose);
+  return out;
+}
+function renderYoutubeInstaller(){
+  const cb=$('#youtubeEnabled');
+  if(!cb)return;
+  cb.checked=state.youtubeEnabled;
+  const box=$('#youtubeStatus');
+  box.className='notice '+(state.youtubeEnabled?'ok':'');
+  box.textContent=state.youtubeEnabled
+    ? '輸出時會安裝／更新 NC YouTube 響應式 CSS。'
+    : '目前不安裝 NC YouTube。勾選後，所有 .nc-youtube 影片會維持 16:9。';
+}
 
 const COMPONENT_DEFS=[
  {key:'note',title:'Note block',desc:'一般補充資訊。Median 官方結構使用 p.note。',tests:[/\.note(?:[,{:\s.#]|$)/i],snippet:"<p class='note'>內容</p>"},
@@ -140,10 +258,10 @@ function readStyles(text){const o={};STYLE_GROUPS.flatMap(g=>g.items).forEach(i=
 function buildMenuXml(){return`<!--[ Dropdown ]-->\n`+state.menus.map(menu=>`<li class='leftC'>\n  <details>\n    <summary class='a flex op i20' style='padding-block: 6px;'>\n      ${menu.icon||genericIcon}\n      <div class='n text'><span>${xmlText(menu.title)}</span></div>\n      <svg class='line r' viewBox='0 0 24 24'><path d='M19.9201 8.94995L13.4001 15.47C12.6301 16.24 11.3701 16.24 10.6001 15.47L4.08008 8.94995'/></svg>\n    </summary>\n    <ul class='n noList'>\n${menu.children.map(c=>`      <li><a href='${xmlAttr(c.url)}' style='padding-block: 2px;'>${xmlText(c.title)}</a></li>`).join('\n')}\n    </ul>\n  </details>\n</li>`).join('\n\n')+'\n                    '}
 function xmlText(s=''){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function xmlAttr(s=''){return xmlText(s).replace(/'/g,'&apos;').replace(/"/g,'&quot;')}
-function rebuild(){let out=state.original;if(state.menuRegion){const region=findMenuRegion(out);if(region)out=out.slice(0,region.start)+buildMenuXml()+out.slice(region.end)}STYLE_GROUPS.flatMap(g=>g.items).forEach(i=>{const value=state.styles[i.key];if(value==null)return;out=i.kind==='var'?setVar(out,i.name,value):setRule(out,i.selector,i.property,value)});state.output=out;computeChanges();renderMeta();renderChanges();return out}
-function computeChanges(){const c=[];if(JSON.stringify(state.menus.map(cleanMenu))!==JSON.stringify(state.originalMenus.map(cleanMenu)))c.push(`主選單：${state.originalMenus.length} 組 → ${state.menus.length} 組`);STYLE_GROUPS.flatMap(g=>g.items).forEach(i=>{if(state.styles[i.key]!==state.originalStyles[i.key])c.push(`${i.label}：${state.originalStyles[i.key]??'未辨識'} → ${state.styles[i.key]??'空白'}`)});state.changes=c}
+function rebuild(){let out=state.original;if(state.menuRegion){const region=findMenuRegion(out);if(region)out=out.slice(0,region.start)+buildMenuXml()+out.slice(region.end)}STYLE_GROUPS.flatMap(g=>g.items).forEach(i=>{const value=state.styles[i.key];if(value==null)return;out=i.kind==='var'?setVar(out,i.name,value):setRule(out,i.selector,i.property,value)});out=applyNcAccordion(out,state.accordionEnabled);out=applyNcYoutube(out,state.youtubeEnabled);state.output=out;computeChanges();renderMeta();renderChanges();return out}
+function computeChanges(){const c=[];if(JSON.stringify(state.menus.map(cleanMenu))!==JSON.stringify(state.originalMenus.map(cleanMenu)))c.push(`主選單：${state.originalMenus.length} 組 → ${state.menus.length} 組`);STYLE_GROUPS.flatMap(g=>g.items).forEach(i=>{if(state.styles[i.key]!==state.originalStyles[i.key])c.push(`${i.label}：${state.originalStyles[i.key]??'未辨識'} → ${state.styles[i.key]??'空白'}`)});if(state.accordionEnabled!==state.originalAccordionEnabled)c.push(`NC Accordion：${state.originalAccordionEnabled?'已安裝':'未安裝'} → ${state.accordionEnabled?'已安裝':'未安裝'}`);if(state.youtubeEnabled!==state.originalYoutubeEnabled)c.push(`NC YouTube：${state.originalYoutubeEnabled?'已安裝':'未安裝'} → ${state.youtubeEnabled?'已安裝':'未安裝'}`);state.changes=c}
 function cleanMenu(m){return{title:m.title,icon:m.icon,children:m.children.map(c=>({title:c.title,url:c.url}))}}
-function analyze(text,filename='blogger-theme.xml'){text=text.replace(/^\uFEFF/,'');if(!text.trim()){toast('請先貼上完整 Blogger Theme。',true);return}if(!/<html\b|<b:skin\b/i.test(text)){toast('內容看起來不像完整 Blogger Theme。',true);return}state.original=text;state.filename=filename.replace(/\.(css|txt|html)$/i,'.xml');state.menuRegion=findMenuRegion(text);state.menus=parseMenus(text,state.menuRegion);state.originalMenus=structuredClone(state.menus);state.styles=readStyles(text);state.originalStyles={...state.styles};state.nativeComponents=detectNativeComponents(text);rebuild();$('#welcome').style.display='none';$('#workspace').classList.add('active');['#newBtn','#validateBtn','#copyBtn','#downloadBtn'].forEach(s=>$(s).disabled=false);renderMenus();renderStyles();renderNativeComponents();$('#menuNotice').textContent=state.menuRegion?`已辨識 Main Menu，找到 ${state.menus.length} 組下拉選單。首頁按鈕不列入編輯。`:'找不到 Main Menu（HTML000）或 Dropdown 標記，因此不會修改選單。';$('#styleNotice').textContent=`已辨識 ${Object.values(state.styles).filter(v=>v!=null).length} 個外觀設定。找不到的項目會顯示為未辨識且不會被修改。`;toast('Theme 已讀取。你現在只會看到 Menu 與常用文章外觀。')}
+function analyze(text,filename='blogger-theme.xml'){text=text.replace(/^\uFEFF/,'');if(!text.trim()){toast('請先貼上完整 Blogger Theme。',true);return}if(!/<html\b|<b:skin\b/i.test(text)){toast('內容看起來不像完整 Blogger Theme。',true);return}state.original=text;state.filename=filename.replace(/\.(css|txt|html)$/i,'.xml');state.menuRegion=findMenuRegion(text);state.menus=parseMenus(text,state.menuRegion);state.originalMenus=structuredClone(state.menus);state.styles=readStyles(text);state.originalStyles={...state.styles};state.nativeComponents=detectNativeComponents(text);state.accordionEnabled=hasNcAccordion(text);state.originalAccordionEnabled=state.accordionEnabled;state.youtubeEnabled=hasNcYoutube(text);state.originalYoutubeEnabled=state.youtubeEnabled;rebuild();$('#welcome').style.display='none';$('#workspace').classList.add('active');['#newBtn','#validateBtn','#copyBtn','#downloadBtn'].forEach(s=>$(s).disabled=false);renderMenus();renderStyles();renderNativeComponents();renderAccordionInstaller();renderYoutubeInstaller();$('#menuNotice').textContent=state.menuRegion?`已辨識 Main Menu，找到 ${state.menus.length} 組下拉選單。首頁按鈕不列入編輯。`:'找不到 Main Menu（HTML000）或 Dropdown 標記，因此不會修改選單。';$('#styleNotice').textContent=`已辨識 ${Object.values(state.styles).filter(v=>v!=null).length} 個外觀設定。找不到的項目會顯示為未辨識且不會被修改。`;toast('Theme 已讀取。你現在只會看到 Menu 與常用文章外觀。')}
 function renderMeta(){$('#menuCount').textContent=state.menus.length;$('#styleCount').textContent=Object.values(state.styles).filter(v=>v!=null).length;$('#changeCount').textContent=state.changes.length}
 function renderMenus(){const root=$('#menuList');root.innerHTML='';if(!state.menuRegion){root.innerHTML='<div class="empty">此 Theme 無法辨識可編輯的 Main Menu。</div>';return}state.menus.forEach((m,idx)=>{const el=document.createElement('div');el.className='menu-card';el.innerHTML=`<div class="menu-head"><div class="drag">↕</div><div class="menu-title">${esc(m.title||'未命名選單')}</div><div class="menu-tools"><button class="iconbtn" data-act="up">↑</button><button class="iconbtn" data-act="down">↓</button><button class="iconbtn" data-act="delete">刪除</button></div></div><div class="menu-fields"><div class="field"><label>主選單名稱</label><input data-role="title" value="${esc(m.title)}"></div><div class="field"><label>圖示</label><select data-role="icon"><option value="keep">保留目前圖示</option><option value="generic">改用簡單圖示</option></select></div></div><div class="children"><strong style="font-size:13px">子選單</strong><div class="child-list">${m.children.map((c,ci)=>`<div class="child"><input data-child-title="${ci}" value="${esc(c.title)}" aria-label="子選單名稱"><input data-child-url="${ci}" value="${esc(c.url)}" aria-label="子選單連結"><button data-child-delete="${ci}">刪除</button></div>`).join('')}</div><button class="btn add-child" data-act="add-child">新增子選單</button></div>`;el.querySelector('[data-role=title]').oninput=e=>{m.title=e.target.value;el.querySelector('.menu-title').textContent=m.title||'未命名選單';rebuild()};el.querySelector('[data-role=icon]').onchange=e=>{if(e.target.value==='generic')m.icon=genericIcon;rebuild()};el.querySelector('[data-act=up]').onclick=()=>moveMenu(idx,-1);el.querySelector('[data-act=down]').onclick=()=>moveMenu(idx,1);el.querySelector('[data-act=delete]').onclick=()=>{state.menus.splice(idx,1);renderMenus();rebuild()};el.querySelector('[data-act=add-child]').onclick=()=>{m.children.push({title:'新子選單',url:'/search/label/'});renderMenus();rebuild()};el.querySelectorAll('[data-child-title]').forEach(input=>input.oninput=e=>{m.children[+e.target.dataset.childTitle].title=e.target.value;rebuild()});el.querySelectorAll('[data-child-url]').forEach(input=>input.oninput=e=>{m.children[+e.target.dataset.childUrl].url=e.target.value;rebuild()});el.querySelectorAll('[data-child-delete]').forEach(btn=>btn.onclick=e=>{m.children.splice(+e.target.dataset.childDelete,1);renderMenus();rebuild()});root.appendChild(el)})}
 function moveMenu(i,d){const j=i+d;if(j<0||j>=state.menus.length)return;[state.menus[i],state.menus[j]]=[state.menus[j],state.menus[i]];renderMenus();rebuild()}
@@ -152,10 +270,10 @@ function applyPreview(){const p=$('#preview');p.querySelector('h1').style.fontSi
 function renderChanges(){const ul=$('#changeList');ul.innerHTML=state.changes.length?state.changes.map(x=>`<li>✓ ${esc(x)}</li>`).join(''):'<li>目前沒有修改；輸出內容會與原始 Theme 相同。</li>'}
 function validate(){const out=rebuild(),before=parseXml(state.original),after=parseXml(out),box=$('#validationResult');const landmarks=/<html\b/i.test(out)&&/<b:skin\b/i.test(out)&&/<\/html>/i.test(out)&&(!state.menuRegion||parseMenus(out,findMenuRegion(out)).length===state.menus.length);let ok=false,msg='';if(before.ok){ok=after.ok&&landmarks;msg=ok?`嚴格 XML 結構正常。輸出共 ${Math.round(out.length/1024)} KB，包含 ${state.changes.length} 項修改。`:`XML 檢查未通過：${after.message||'缺少 Theme 必要結構'}`}else{ok=landmarks;msg=ok?`Blogger Theme 含有延伸語法，瀏覽器無法當作一般 XML 嚴格驗證；但完整 Theme、b:skin、結尾標記與 Main Menu Patch 結構均正常。共 ${state.changes.length} 項修改。`:`Theme 結構檢查未通過：必要標記或 Main Menu 數量不一致。`}box.className='notice '+(ok?'ok':'');box.textContent=msg;toast(ok?'完整 Theme 結構檢查正常。':'Theme 結構檢查未通過。',!ok);return ok}
 async function copyOutput(){const out=rebuild();try{await navigator.clipboard.writeText(out);toast('已複製完整 Theme，可貼到 Blogger 後台。')}catch{toast('瀏覽器無法直接複製，請使用「查看完整 Theme」手動複製。',true)}}
-function download(){const out=rebuild();const r=parseXml(out);if(!r.ok&&!confirm('完整 Theme 未通過 XML 檢查。仍要下載嗎？'))return;const blob=new Blob([out],{type:'application/xml;charset=utf-8'}),a=document.createElement('a'),stamp=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);a.href=URL.createObjectURL(blob);a.download=state.filename.replace(/\.xml$/i,`-v2.3-${stamp}.xml`);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('完整 Theme 已下載。上傳前請保留 Blogger 原始備份。')}
-function reset(){if(!confirm('要還原本次所有 Menu 與外觀修改嗎？文章元件頁只是辨識結果，不會被修改。'))return;state.menus=structuredClone(state.originalMenus);state.styles={...state.originalStyles};renderMenus();renderStyles();rebuild();$('#validationResult').className='notice';$('#validationResult').textContent='已還原所有修改，尚未重新檢查。';toast('已還原到剛載入 Theme 時的狀態。')}
+function download(){const out=rebuild();const r=parseXml(out);if(!r.ok&&!confirm('完整 Theme 未通過 XML 檢查。仍要下載嗎？'))return;const blob=new Blob([out],{type:'application/xml;charset=utf-8'}),a=document.createElement('a'),stamp=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);a.href=URL.createObjectURL(blob);a.download=state.filename.replace(/\.xml$/i,`-v2.5-${stamp}.xml`);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('完整 Theme 已下載。上傳前請保留 Blogger 原始備份。')}
+function reset(){if(!confirm('要還原本次所有 Menu 與外觀修改嗎？文章元件頁只是辨識結果，不會被修改。'))return;state.menus=structuredClone(state.originalMenus);state.styles={...state.originalStyles};state.accordionEnabled=state.originalAccordionEnabled;state.youtubeEnabled=state.originalYoutubeEnabled;renderMenus();renderStyles();renderAccordionInstaller();renderYoutubeInstaller();rebuild();$('#validationResult').className='notice';$('#validationResult').textContent='已還原所有修改，尚未重新檢查。';toast('已還原到剛載入 Theme 時的狀態。')}
 $$('.nav button').forEach(b=>b.onclick=()=>{$$('.nav button').forEach(x=>x.classList.toggle('active',x===b));$$('.pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+b.dataset.pane));if(b.dataset.pane==='output')rebuild()});
-$('#analyzeBtn').onclick=()=>analyze($('#sourceInput').value);$('#fileInput').onchange=async e=>{const f=e.target.files[0];if(f)analyze(await f.text(),f.name)};$('#addMenuBtn').onclick=()=>{state.menus.push({id:String(Date.now()),title:'新主選單',icon:genericIcon,children:[{title:'新子選單',url:'/search/label/'}]});renderMenus();rebuild()};$('#validateBtn').onclick=$('#validateInsideBtn').onclick=validate;$('#copyBtn').onclick=$('#copyInsideBtn').onclick=copyOutput;$('#downloadBtn').onclick=$('#downloadInsideBtn').onclick=download;$('#resetBtn').onclick=reset;$('#showXmlBtn').onclick=()=>{$('#xmlCode').textContent=rebuild();$('#xmlDialog').showModal()};$('#newBtn').onclick=()=>{if(state.changes.length&&!confirm('尚有未下載的修改，仍要載入另一份 Theme 嗎？'))return;location.reload()};
+$('#accordionEnabled').onchange=e=>{state.accordionEnabled=e.target.checked;renderAccordionInstaller();rebuild()};$('#youtubeEnabled').onchange=e=>{state.youtubeEnabled=e.target.checked;renderYoutubeInstaller();rebuild()};$('#analyzeBtn').onclick=()=>analyze($('#sourceInput').value);$('#fileInput').onchange=async e=>{const f=e.target.files[0];if(f)analyze(await f.text(),f.name)};$('#addMenuBtn').onclick=()=>{state.menus.push({id:String(Date.now()),title:'新主選單',icon:genericIcon,children:[{title:'新子選單',url:'/search/label/'}]});renderMenus();rebuild()};$('#validateBtn').onclick=$('#validateInsideBtn').onclick=validate;$('#copyBtn').onclick=$('#copyInsideBtn').onclick=copyOutput;$('#downloadBtn').onclick=$('#downloadInsideBtn').onclick=download;$('#resetBtn').onclick=reset;$('#showXmlBtn').onclick=()=>{$('#xmlCode').textContent=rebuild();$('#xmlDialog').showModal()};$('#newBtn').onclick=()=>{if(state.changes.length&&!confirm('尚有未下載的修改，仍要載入另一份 Theme 嗎？'))return;location.reload()};
 })();
 </script>
 </body></html>

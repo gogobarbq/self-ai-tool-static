@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>圖文合併與 Blogger 發布工具</title>
+<title>圖文合併工具</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
@@ -289,23 +289,6 @@
   }
   .preview-box img{ max-width:100%; border-radius:4px; display:block; margin:10px 0; }
   .preview-box h1, .preview-box h2, .preview-box h3{ font-family:var(--sans); color:var(--ink); }
-
-  .preview-box .note{position:relative;margin:1.2em 0;padding:18px 20px 18px 40px;border-radius:4px;background:#e8f0fe;color:#272eb5;font-size:14px;line-height:1.4;overflow:hidden;}
-  .preview-box .note::after{content:'*';position:absolute;top:12px;left:14px;min-width:15px;text-align:center;font-size:1.5rem;}
-  .preview-box .note.wr{background:#fce8e8;color:#e51661;}
-  .preview-box .note.wr::after{content:'!';}
-  .preview-box .showH{margin:1.7em 0;font-size:.98em;line-height:1.6;}
-  .preview-box details.ac{padding:1.5em 1.25em;border-bottom:1px solid var(--line);}
-  .preview-box details.ac:first-child{border-top:1px solid var(--line);}
-  .preview-box details.ac summary{display:flex;align-items:baseline;justify-content:space-between;gap:12px;cursor:pointer;font-weight:600;list-style:none;}
-  .preview-box details.ac summary::after{content:'❯';flex-shrink:0;font-size:small;transform:rotate(90deg);}
-  .preview-box details.ac[open] summary::after{transform:rotate(-90deg);}
-  .preview-box .aC{margin:1em 0;}
-  .preview-box .aC p:first-child{margin-top:0;}
-  .preview-box .aC p:last-child{margin-bottom:0;}
-  .preview-box .pRef{margin:1.2em 0;padding:14px 16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:.92em;}
-  .preview-box .pRefH{font-weight:600;margin-bottom:6px;}
-
   .warn-list{ font-family:var(--mono); font-size:11px; color:var(--warn); margin-top:8px; }
   .count-badge{ font-family:var(--mono); font-size:11px; color:var(--muted); }
 </style>
@@ -314,9 +297,9 @@
 
 <div class="header">
   <div>
-    <h1>圖文合併與 Blogger 發布工具</h1>
-    <div class="sub">step1 清理圖片 → step2 標記 tag → step3 轉換成 Blogger 可發布內容</div>
-    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：v3.1 · 2026-08-01（修正 Note 內容與 Accordion 對齊）</div>
+    <h1>圖文合併工具</h1>
+    <div class="sub">step1 清理 → step2 標記 tag → step3 套用進文章</div>
+    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：2026-08-01 更新（Markdown 連結轉 Blogger 語法）</div>
   </div>
   <div class="theme-picker">
     <label for="themeSelect">主題色</label>
@@ -388,8 +371,8 @@
 <!-- STEP 3 -->
 <div class="step-panel">
   <div class="step-label">STEP 3 · 套用進文章 MD</div>
-  <p class="panel-title">貼上文章 MD（可含圖片 Tag、NC Markdown 元件與連結）</p>
-  <textarea id="mdInput" placeholder="例如：{{img:bird}}、{{note}}...{{end}}、[連結文字](網址) 或 YouTube 連結..."></textarea>
+  <p class="panel-title">貼上文章 MD（含 {{img:tag}} 標記與 Markdown 連結）</p>
+  <textarea id="mdInput" placeholder="貼上你的 MD 內容，含 {{img:tagname}}、[連結文字](網址) 或 YouTube 連結..."></textarea>
   <div class="global-bar" style="margin-top:12px;">
     <label>圖片外框：</label>
     <select id="borderStyle">
@@ -398,26 +381,10 @@
       <option value="shadow">陰影框</option>
       <option value="rounded">圓角框</option>
     </select>
-    <label><input type="checkbox" id="convertComponents" checked style="accent-color:var(--accent);"> 轉換 Median 元件</label>
-    <label><input type="checkbox" id="convertLinks" checked style="accent-color:var(--accent);"> 轉換 Hyperlink 與 YouTube</label>
+    <label><input type="checkbox" id="convertLinks" checked style="accent-color:var(--accent);"> 轉換 Markdown hyperlink</label>
   </div>
-  <p class="hint"><strong>Median 元件：</strong>本版支援 <code>{{note}}</code>、<code>{{warning}}</code>、<code>{{accordion title="..."}}</code>、<code>{{reference}}</code>，區塊結尾統一寫 <code>{{end}}</code>。</p>
-  <p class="hint"><strong>連結：</strong>Markdown link 與直接貼上的網址會變成新視窗連結；YouTube 網址會轉成可全螢幕播放的嵌入影片。</p>
-  <details class="restore-panel" style="margin:14px 0 0;">
-    <summary class="restore-summary"><span class="restore-icon">📖</span><span>NC Markdown 語法速查<span class="restore-sub">（不用背，需要時展開複製）</span></span></summary>
-    <div class="restore-body">
-      <div class="hint">
-        <p><strong>圖片</strong><br><code>{{img:bird}}</code></p>
-        <p><strong>Note</strong><br><code>{{note}}</code><br>補充內容<br><code>{{end}}</code></p>
-        <p><strong>Warning</strong><br><code>{{warning}}</code><br>注意內容<br><code>{{end}}</code></p>
-        <p><strong>Accordion</strong><br><code>{{accordion title="更多背景"}}</code><br>可收合內容<br><code>{{end}}</code></p>
-        <p><strong>Reference</strong><br><code>{{reference}}</code><br>- 參考資料一<br>- 參考資料二<br><code>{{end}}</code></p>
-        <p><strong>Hyperlink</strong><br><code>[顯示文字](https://example.com)</code></p>
-      </div>
-      <button class="btn-secondary" id="downloadCheatSheetBtn">下載目前版本的 Obsidian Cheat Sheet</button>
-    </div>
-  </details>
-  <button class="btn-secondary" id="mergeBtn" style="margin-top:10px;">執行發布前轉換 →</button>
+  <p class="hint">一般連結會轉成新視窗開啟；YouTube 連結會轉成可全螢幕播放的嵌入影片。支援 <code>youtube.com/watch</code>、<code>youtu.be</code>、<code>youtube.com/shorts</code> 與 <code>youtube.com/embed</code>。</p>
+  <button class="btn-secondary" id="mergeBtn" style="margin-top:10px;">套用圖片 tag 與連結語法 →</button>
   <div class="warn-list" id="warnList"></div>
 
   <div style="margin-top:14px;">
@@ -916,190 +883,6 @@ function youtubeEmbedMarkup(url, title) {
   return `<div style="position:relative;width:100%;padding-top:56.25%;margin:1em 0;overflow:hidden;"><iframe src="https://www.youtube.com/embed/${escapeAttr(id)}" title="${safeTitle}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
 }
 
-const COMPONENT_REGISTRY = {
-  note: {
-    label: 'Note',
-    example: '{{note}}\n補充內容\n{{end}}',
-    render: ({ body }) => `<div class="note">${noteBodyHtml(body)}</div>`
-  },
-  warning: {
-    label: 'Warning',
-    example: '{{warning}}\n注意內容\n{{end}}',
-    render: ({ body }) => `<div class="note wr">${noteBodyHtml(body)}</div>`
-  },
-  accordion: {
-    label: 'Accordion',
-    example: '{{accordion title="更多背景"}}\n可收合內容\n{{end}}',
-    render: ({ body, attrs }) => {
-      const title = escapeAttr(attrs.title || '更多內容');
-      return `<div class="showH">\n  <details class="ac">\n    <summary>${title}</summary>\n    <div class="aC">${componentBodyHtml(body)}</div>\n  </details>\n</div>`;
-    }
-  },
-  reference: {
-    label: 'Reference',
-    example: '{{reference}}\n- 參考資料一\n- 參考資料二\n{{end}}',
-    render: ({ body }) => `<div class="pRef">\n  <div class="pRefH">Source:</div>\n  <div class="pRefB">${componentBodyHtml(body)}</div>\n</div>`
-  }
-};
-
-function parseComponentAttrs(raw) {
-  const attrs = {};
-  String(raw || '').replace(/([a-zA-Z][\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g,
-    (whole, key, doubleValue, singleValue) => {
-      attrs[key] = doubleValue !== undefined ? doubleValue : singleValue;
-      return whole;
-    });
-  return attrs;
-}
-
-function componentInlineHtml(text) {
-  return String(text || '')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/(^|[^*])\*([^*\n]+?)\*/g, '$1<em>$2</em>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>');
-}
-
-function noteBodyHtml(body) {
-  const clean = String(body || '').trim();
-  if (!clean) return '';
-
-  const blocks = clean.split(/\n\s*\n/);
-  return blocks.map(block => {
-    const lines = block.split('\n').map(x => x.trim()).filter(Boolean);
-    if (!lines.length) return '';
-
-    if (lines.every(line => /^[-*]\s+/.test(line))) {
-      return '<ul>' + lines.map(line =>
-        `<li>${componentInlineHtml(line.replace(/^[-*]\s+/, ''))}</li>`
-      ).join('') + '</ul>';
-    }
-
-    if (lines.every(line => /^\d+[.)]\s+/.test(line))) {
-      return '<ol>' + lines.map(line =>
-        `<li>${componentInlineHtml(line.replace(/^\d+[.)]\s+/, ''))}</li>`
-      ).join('') + '</ol>';
-    }
-
-    return componentInlineHtml(lines.join('<br>'));
-  }).join('<br><br>');
-}
-
-function componentBodyHtml(body) {
-  const clean = String(body || '').trim();
-  if (!clean) return '';
-
-  const blocks = clean.split(/\n\s*\n/);
-  return blocks.map(block => {
-    const lines = block.split('\n').map(x => x.trim()).filter(Boolean);
-    if (!lines.length) return '';
-
-    if (lines.every(line => /^[-*]\s+/.test(line))) {
-      return '<ul>' + lines.map(line =>
-        `<li>${componentInlineHtml(line.replace(/^[-*]\s+/, ''))}</li>`
-      ).join('') + '</ul>';
-    }
-
-    if (lines.every(line => /^\d+[.)]\s+/.test(line))) {
-      return '<ol>' + lines.map(line =>
-        `<li>${componentInlineHtml(line.replace(/^\d+[.)]\s+/, ''))}</li>`
-      ).join('') + '</ol>';
-    }
-
-    return `<p>${componentInlineHtml(lines.join('<br>'))}</p>`;
-  }).join('');
-}
-
-function convertMedianComponents(md) {
-  const unresolved = [];
-  const pattern = /^\{\{(note|warning|accordion|reference)([^}]*)\}\}[ \t]*\n([\s\S]*?)\n\{\{end\}\}[ \t]*$/gm;
-
-  const output = md.replace(pattern, (whole, type, rawAttrs, body) => {
-    const def = COMPONENT_REGISTRY[type];
-    if (!def) {
-      unresolved.push(type);
-      return whole;
-    }
-    return def.render({ body, attrs: parseComponentAttrs(rawAttrs) });
-  });
-
-  return { output, unresolved };
-}
-
-function buildCheatSheet() {
-  const sections = Object.entries(COMPONENT_REGISTRY).map(([key, def]) =>
-    `## ${def.label}\n\n\`\`\`text\n${def.example}\n\`\`\``
-  ).join('\n\n---\n\n');
-
-  return `# NC Markdown v3 Cheat Sheet
-
-> Obsidian → NC Markdown Compiler → Median UI／Blogger
-
-## 圖片
-
-\`\`\`text
-{{img:bird}}
-\`\`\`
-
----
-
-${sections}
-
----
-
-## 一般 Hyperlink
-
-\`\`\`markdown
-[顯示文字](https://example.com)
-\`\`\`
-
-發布時會加上 \`target="_blank"\` 與安全屬性。
-
-## 純網址
-
-\`\`\`text
-https://example.com
-\`\`\`
-
-## YouTube
-
-\`\`\`text
-https://youtu.be/VIDEO_ID
-\`\`\`
-
-發布時會轉成可全螢幕播放的嵌入影片。
-`;
-}
-
-function convertBareUrls(md) {
-  const stash = [];
-  const keep = (text) => {
-    stash.push(text);
-    return `\u0002${stash.length - 1}\u0002`;
-  };
-
-  // Do not touch URLs already inside generated/existing HTML, Markdown images, or code spans.
-  let work = md.replace(/<a\b[\s\S]*?<\/a>|<iframe\b[\s\S]*?<\/iframe>|<div\b[^>]*>[\s\S]*?<iframe\b[\s\S]*?<\/iframe>[\s\S]*?<\/div>|<img\b[^>]*>|`[^`]*`/gi, keep);
-  work = work.replace(/\[!\[[^\]]*\]\([^)]+\)\]\([^)]+\)|!\[[^\]]*\]\([^)]+\)/g, keep);
-
-  work = work.replace(/(^|[\s（(：:])((?:https?:\/\/)[^\s<>"'）)]+)/g, (whole, prefix, rawUrl) => {
-    let url = rawUrl;
-    let tail = '';
-    while (/[.,;!?，。；！？、]$/.test(url)) {
-      tail = url.slice(-1) + tail;
-      url = url.slice(0, -1);
-    }
-    const embed = youtubeEmbedMarkup(url, 'YouTube video');
-    if (embed) return `${prefix}${embed}${tail}`;
-    return `${prefix}<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">${url}</a>${tail}`;
-  });
-
-  return work.replace(/\u0002(\d+)\u0002/g, (m, idx) => stash[Number(idx)]);
-}
-
-function convertHyperlinks(md) {
-  return convertBareUrls(convertMarkdownLinks(md));
-}
-
 function convertMarkdownLinks(md) {
   const stash = [];
   const keep = (text) => {
@@ -1135,15 +918,9 @@ document.getElementById('mergeBtn').onclick = () => {
   const missing = [];
   let usedAny = false;
 
-  let sourceMd = md;
-  const componentWarnings = [];
-  if (document.getElementById('convertComponents').checked) {
-    const componentResult = convertMedianComponents(sourceMd);
-    sourceMd = componentResult.output;
-    componentWarnings.push(...componentResult.unresolved);
-  }
+  const sourceMd = document.getElementById('convertLinks').checked ? convertMarkdownLinks(md) : md;
 
-  let merged = sourceMd.replace(/\{\{img:([a-zA-Z0-9_\-]+)\}\}/g, (match, tagName) => {
+  const merged = sourceMd.replace(/\{\{img:([a-zA-Z0-9_\-]+)\}\}/g, (match, tagName) => {
     usedAny = true;
     const r = tagRows.find(r => r.tag.trim() === tagName.trim());
     if (r && r.src) {
@@ -1154,21 +931,15 @@ document.getElementById('mergeBtn').onclick = () => {
     }
   });
 
-  if (document.getElementById('convertLinks').checked) merged = convertHyperlinks(merged);
-
   document.getElementById('mdOutput').value = merged;
 
-  const messages = [];
   if (missing.length > 0) {
-    messages.push('⚠ 找不到圖片網址：' + missing.join(', ') + '（已保留原標記）');
+    warnList.textContent = '⚠ 找不到對應網址：' + missing.join(', ') + '（已保留原標記，回 STEP 2 補上 tag 後可重新套用）';
+  } else if (!usedAny) {
+    warnList.textContent = 'ℹ 這段 MD 裡沒有偵測到 {{img:tag}} 標記。';
+  } else {
+    warnList.textContent = '';
   }
-  if (componentWarnings.length > 0) {
-    messages.push('⚠ 無法轉換元件：' + componentWarnings.join(', '));
-  }
-  if (!usedAny && !/\{\{(?:note|warning|accordion|reference)\b/.test(md)) {
-    messages.push('ℹ 這段 MD 沒有圖片 Tag 或目前支援的 Median 元件；仍會處理 Hyperlink／YouTube。');
-  }
-  warnList.textContent = messages.join('　');
 
   if (document.getElementById('mdPreview').style.display !== 'none') {
     renderPreview(merged);
@@ -1178,7 +949,7 @@ document.getElementById('mergeBtn').onclick = () => {
 function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function mdToHtml(md){
   const stash = [];
-  const protectedMd = md.replace(/<div\b[^>]*class=[\"'][^\"']*\bshowH\b[^\"']*[\"'][^>]*>[\s\S]*?<\/details>\s*<\/div>|<div\b[^>]*class=[\"'][^\"']*\bnote\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>|<div\b[^>]*class=[\"'][^\"']*\bpRef\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>|<a\b[\s\S]*?<\/a>|<img[^>]*>|<div\b[^>]*>[\s\S]*?<iframe\b[\s\S]*?<\/iframe>[\s\S]*?<\/div>|<iframe\b[\s\S]*?<\/iframe>/gi, (m) => {
+  const protectedMd = md.replace(/<a\b[\s\S]*?<\/a>|<img[^>]*>|<div\b[^>]*>[\s\S]*?<iframe\b[\s\S]*?<\/iframe>[\s\S]*?<\/div>|<iframe\b[\s\S]*?<\/iframe>/gi, (m) => {
     stash.push(m);
     return `\u0000${stash.length - 1}\u0000`;
   });
@@ -1213,16 +984,6 @@ document.getElementById('previewToggleBtn').onclick = () => {
 function renderPreview(md) {
   document.getElementById('mdPreview').innerHTML = mdToHtml(md);
 }
-
-
-document.getElementById('downloadCheatSheetBtn').onclick = () => {
-  const blob = new Blob([buildCheatSheet()], { type: 'text/markdown;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'NC Markdown v3 Cheat Sheet.md';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-};
 
 document.getElementById('finalCopyBtn').onclick = () => {
   const out = document.getElementById('mdOutput');
