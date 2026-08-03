@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Theme 工作台 v2.6｜Blogger Theme Workbench</title>
+<title>Theme 工作台 v2.7｜Blogger Theme Workbench</title>
 <style>
 :root{--bg:#f3f5f7;--panel:#fff;--panel2:#f8fafb;--text:#17202a;--muted:#687384;--line:#d9e0e7;--accent:#245c4f;--accent2:#e7f2ee;--danger:#a33a3a;--ok:#17704a;--shadow:0 12px 32px rgb(17 24 39/.08);--r:14px}
 @media(prefers-color-scheme:dark){:root{--bg:#11161b;--panel:#182027;--panel2:#202a32;--text:#edf2f7;--muted:#aab4bf;--line:#34414b;--accent:#7bc4b0;--accent2:#203b35;--danger:#ff9a9a;--ok:#83d7ae;--shadow:none}}
@@ -43,7 +43,7 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="brand"><h1>Theme 工作台 v2.6</h1><p>Blogger Theme Workbench · 最後修改：2026-08-02（YouTube iframe 直接辨識）</p></div><div class="actions"><button class="btn" id="newBtn" disabled>載入另一份 Theme</button><button class="btn" id="validateBtn" disabled>檢查完整 Theme</button><button class="btn" id="copyBtn" disabled>複製完整 Theme</button><button class="btn primary" id="downloadBtn" disabled>下載完整 Theme</button></div></header>
+<header class="top"><div class="brand"><h1>Theme 工作台 v2.7</h1><p>Blogger Theme Workbench · 最後修改：2026-08-03（YouTube allow 屬性自動修補）</p></div><div class="actions"><button class="btn" id="newBtn" disabled>載入另一份 Theme</button><button class="btn" id="validateBtn" disabled>檢查完整 Theme</button><button class="btn" id="copyBtn" disabled>複製完整 Theme</button><button class="btn primary" id="downloadBtn" disabled>下載完整 Theme</button></div></header>
 <main>
 <section class="welcome" id="welcome"><div class="hero"><article class="card intro"><h2>只顯示你真的會改的地方。</h2><p>貼入完整 Blogger Theme。工作台會保留原始 XML，只把主選單、文章字體、段落間距、分隔線與引用區塊整理成人看得懂的設定，並辨識 Theme 內已存在的 Median UI 文章元件。輸出時以局部 Patch 放回原始 Theme，不重寫其他程式。</p><div class="promise"><div><strong>會修改</strong><span>Main Menu 與目前畫面中列出的外觀值。文章元件頁只做辨識，不另裝一套 CSS。</span></div><div><strong>不會修改</strong><span>JavaScript、其他 Widgets、未顯示的 CSS 與 Blogger 系統設定。</span></div><div><strong>資料位置</strong><span>只在目前瀏覽器分頁處理，不會上傳。</span></div><div><strong>輸出方式</strong><span>複製或下載重新組裝後的完整 Theme XML。</span></div></div></article><section class="card"><h3 style="margin-top:0">貼上 Blogger Theme</h3><p style="color:var(--muted);font-size:14px;line-height:1.55">可從 Blogger Theme 編輯器全選複製，也可開啟已下載的 XML。</p><textarea id="sourceInput" spellcheck="false" placeholder="請貼上完整 Blogger Theme…"></textarea><div class="row" style="margin-top:12px"><button class="btn primary" id="analyzeBtn">讀取 Theme</button><label class="file">或開啟 Theme 檔<input id="fileInput" type="file" accept=".xml,.txt,.html,.css,text/xml,application/xml,text/plain"></label></div><div class="hint">建議先在 Blogger 後台備份目前 Theme。工作台會在輸出前檢查完整 XML，但實際套用後仍應先預覽網站。</div></section></div></section>
 <section class="workspace" id="workspace"><div class="overview"><div class="metric"><strong id="menuCount">0</strong><span>辨識到的主選單</span></div><div class="metric"><strong id="styleCount">0</strong><span>可調整的外觀設定</span></div><div class="metric"><strong id="changeCount">0</strong><span>目前變更</span></div></div><div class="layout"><nav class="nav"><button class="active" data-pane="menu">選單管理<small>名稱、連結、排序</small></button><button data-pane="style">文章外觀<small>字體、段落、引用</small></button><button data-pane="components">文章元件<small>Median 原生元件辨識</small></button><button data-pane="output">輸出與檢查<small>摘要、完整 Theme</small></button></nav><div>
@@ -76,7 +76,7 @@
     <div class="section-body">
       <label style="display:flex;gap:9px;align-items:flex-start">
         <input type="checkbox" id="youtubeEnabled" style="margin-top:3px">
-        <span><strong>在 Theme 安裝／更新 YouTube iframe 樣式</strong><br><small style="color:var(--muted)">直接依 iframe 的 YouTube embed 網址套用 16:9；即使 StackEdit 移除外層 div、class 與 inline style，仍然有效。</small></span>
+        <span><strong>在 Theme 安裝／更新 YouTube iframe 樣式</strong><br><small style="color:var(--muted)">直接依 iframe 的 YouTube embed 網址套用 16:9；即使 StackEdit 移除外層 div、class、inline style 或 allow 屬性（自動播放／子母畫面等權限），仍會由 Theme 自動補回。</small></span>
       </label>
       <div id="youtubeStatus" class="notice" style="margin-top:12px"></div>
       <div class="component-preview" style="margin-top:12px">
@@ -181,11 +181,36 @@ ${NC_YOUTUBE_CSS_END}`;
 function hasNcYoutube(text){
   return text.includes(NC_YOUTUBE_CSS_START);
 }
+
+const NC_YOUTUBE_JS_START='<!-- NC YOUTUBE JS START -->';
+const NC_YOUTUBE_JS_END='<!-- NC YOUTUBE JS END -->';
+const NC_YOUTUBE_ALLOW='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+
+const NC_YOUTUBE_JS=`${NC_YOUTUBE_JS_START}
+<script>
+//<![CDATA[
+(function(){
+  function fixIframe(f){
+    if(!f.getAttribute('allow'))f.setAttribute('allow','${NC_YOUTUBE_ALLOW}');
+    if(!f.hasAttribute('allowfullscreen'))f.setAttribute('allowfullscreen','');
+  }
+  function scan(){
+    document.querySelectorAll('iframe[src*="youtube.com/embed"],iframe[src*="youtube-nocookie.com/embed"]').forEach(fixIframe);
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',scan)}else{scan()}
+})();
+//]]>
+<\/script>
+${NC_YOUTUBE_JS_END}`;
+
 function applyNcYoutube(text,enabled){
   let out=removeMarkedBlock(text,NC_YOUTUBE_CSS_START,NC_YOUTUBE_CSS_END);
+  out=removeMarkedBlock(out,NC_YOUTUBE_JS_START,NC_YOUTUBE_JS_END);
   if(!enabled)return out;
   const skinClose=out.indexOf('</b:skin>');
   if(skinClose>=0)out=out.slice(0,skinClose)+'\n'+NC_YOUTUBE_CSS+'\n'+out.slice(skinClose);
+  const bodyClose=out.lastIndexOf('</body>');
+  if(bodyClose>=0)out=out.slice(0,bodyClose)+'\n'+NC_YOUTUBE_JS+'\n'+out.slice(bodyClose);
   return out;
 }
 function renderYoutubeInstaller(){
@@ -195,8 +220,8 @@ function renderYoutubeInstaller(){
   const box=$('#youtubeStatus');
   box.className='notice '+(state.youtubeEnabled?'ok':'');
   box.textContent=state.youtubeEnabled
-    ? '輸出時會安裝／更新 YouTube iframe 響應式 CSS。'
-    : '目前不安裝 YouTube iframe 樣式。勾選後，所有 YouTube embed iframe 都會維持 16:9。';
+    ? '輸出時會安裝／更新 YouTube iframe 響應式 CSS，並加裝一段 JS：即使 StackEdit 把 allow 屬性砍掉（自動播放、子母畫面、剪貼簿等權限），頁面載入時會自動補回來。'
+    : '目前不安裝 YouTube 相關樣式與修補 JS。勾選後，所有 YouTube embed iframe 都會維持 16:9，且 allow 屬性被砍掉時會自動補回。';
 }
 
 const COMPONENT_DEFS=[

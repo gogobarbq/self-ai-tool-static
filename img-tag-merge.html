@@ -318,7 +318,7 @@
   <div>
     <h1>圖文合併與 Blogger 發布工具</h1>
     <div class="sub">step1 清理圖片 → step2 標記 tag → step3 轉換成 Blogger 可發布內容</div>
-    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：v3.4 · 2026-08-02（YouTube 直接 iframe，相容 StackEdit）</div>
+    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：v3.4.1 · 2026-08-03（修正 Reference 預覽提早截斷）</div>
   </div>
   <div class="theme-picker">
     <label for="themeSelect">主題色</label>
@@ -1185,7 +1185,7 @@ document.getElementById('mergeBtn').onclick = () => {
 function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function mdToHtml(md){
   const stash = [];
-  const protectedMd = md.replace(/<div\b[^>]*class=[\"'][^\"']*\bnc-accordion\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>\s*<\/div>|<div\b[^>]*class=[\"'][^\"']*\bnote\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>|<div\b[^>]*class=[\"'][^\"']*\bpRef\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>|<a\b[\s\S]*?<\/a>|<img[^>]*>|<div\b[^>]*>[\s\S]*?<iframe\b[\s\S]*?<\/iframe>[\s\S]*?<\/div>|<iframe\b[\s\S]*?<\/iframe>/gi, (m) => {
+  const protectedMd = md.replace(/<div\b[^>]*class=[\"'][^\"']*\bnc-accordion\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>\s*<\/div>|<div\b[^>]*class=[\"'][^\"']*\bnote\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>|<div\b[^>]*class=[\"'][^\"']*\bpRef\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>\s*<\/div>|<a\b[\s\S]*?<\/a>|<img[^>]*>|<div\b[^>]*>[\s\S]*?<iframe\b[\s\S]*?<\/iframe>[\s\S]*?<\/div>|<iframe\b[\s\S]*?<\/iframe>/gi, (m) => {
     stash.push(m);
     return `\u0000${stash.length - 1}\u0000`;
   });
