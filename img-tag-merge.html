@@ -318,7 +318,7 @@
   <div>
     <h1>圖文合併與 Blogger 發布工具</h1>
     <div class="sub">step1 清理圖片 → step2 標記 tag → step3 轉換成 Blogger 可發布內容</div>
-    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：v3.4.1 · 2026-08-03（修正 Reference 預覽提早截斷）</div>
+    <div class="sub" id="buildDate" style="margin-top:4px;">工具版本：v3.5 · 2026-08-09（Component 支援單行／多行語法）</div>
   </div>
   <div class="theme-picker">
     <label for="themeSelect">主題色</label>
@@ -403,7 +403,7 @@
     <label><input type="checkbox" id="convertComponents" checked style="accent-color:var(--accent);"> 轉換 Median 元件</label>
     <label><input type="checkbox" id="convertLinks" checked style="accent-color:var(--accent);"> 轉換 Hyperlink 與 YouTube</label>
   </div>
-  <p class="hint"><strong>Median 元件：</strong>本版支援 <code>{{note}}</code>、<code>{{warning}}</code>、<code>{{accordion title="..."}}</code>、<code>{{reference}}</code>，區塊結尾統一寫 <code>{{end}}</code>。</p>
+  <p class="hint"><strong>Median 元件：</strong>本版支援 <code>{{note}}</code>、<code>{{warning}}</code>、<code>{{accordion title="..."}}</code>、<code>{{reference}}</code>，區塊結尾統一寫 <code>{{end}}</code>。短內容也可直接寫成 <code>{{note}}單行內容{{end}}</code>。</p>
   <p class="hint"><strong>連結：</strong>Markdown link 與直接貼上的網址會變成新視窗連結；YouTube 網址會轉成可全螢幕播放的嵌入影片。</p>
   <details class="restore-panel" style="margin:14px 0 0;">
     <summary class="restore-summary"><span class="restore-icon">📖</span><span>NC Markdown 語法速查<span class="restore-sub">（不用背，需要時展開複製）</span></span></summary>
@@ -1016,7 +1016,14 @@ function componentBodyHtml(body) {
 
 function convertMedianComponents(md) {
   const unresolved = [];
-  const pattern = /^\{\{(note|warning|accordion|reference)([^}]*)\}\}[ \t]*\n([\s\S]*?)\n\{\{end\}\}[ \t]*$/gm;
+
+  // Flexible block parser:
+  // {{note}}內容{{end}}
+  // {{note}}內容\n第二行{{end}}
+  // {{note}}\n多行內容\n{{end}}
+  //
+  // Opening / closing tags no longer need to occupy their own lines.
+  const pattern = /\{\{(note|warning|accordion|reference)([^}]*)\}\}([\s\S]*?)\{\{end\}\}/g;
 
   const output = md.replace(pattern, (whole, type, rawAttrs, body) => {
     const def = COMPONENT_REGISTRY[type];
@@ -1024,7 +1031,10 @@ function convertMedianComponents(md) {
       unresolved.push(type);
       return whole;
     }
-    return def.render({ body, attrs: parseComponentAttrs(rawAttrs) });
+    return def.render({
+      body: String(body || '').trim(),
+      attrs: parseComponentAttrs(rawAttrs)
+    });
   });
 
   return { output, unresolved };
@@ -1185,7 +1195,7 @@ document.getElementById('mergeBtn').onclick = () => {
 function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function mdToHtml(md){
   const stash = [];
-  const protectedMd = md.replace(/<div\b[^>]*class=[\"'][^\"']*\bnc-accordion\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>\s*<\/div>|<div\b[^>]*class=[\"'][^\"']*\bnote\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>|<div\b[^>]*class=[\"'][^\"']*\bpRef\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>\s*<\/div>|<a\b[\s\S]*?<\/a>|<img[^>]*>|<div\b[^>]*>[\s\S]*?<iframe\b[\s\S]*?<\/iframe>[\s\S]*?<\/div>|<iframe\b[\s\S]*?<\/iframe>/gi, (m) => {
+  const protectedMd = md.replace(/<div\b[^>]*class=[\"'][^\"']*\bnc-accordion\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>\s*<\/div>|<div\b[^>]*class=[\"'][^\"']*\bnote\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>|<div\b[^>]*class=[\"'][^\"']*\bpRef\b[^\"']*[\"'][^>]*>[\s\S]*?<\/div>|<a\b[\s\S]*?<\/a>|<img[^>]*>|<div\b[^>]*>[\s\S]*?<iframe\b[\s\S]*?<\/iframe>[\s\S]*?<\/div>|<iframe\b[\s\S]*?<\/iframe>/gi, (m) => {
     stash.push(m);
     return `\u0000${stash.length - 1}\u0000`;
   });
