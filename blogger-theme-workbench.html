@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Theme 工作台 v2.16｜Blogger Theme Workbench</title>
+<title>Theme 工作台 v2.17｜Blogger Theme Workbench</title>
 <style>
 :root{--bg:#f3f5f7;--panel:#fff;--panel2:#f8fafb;--text:#17202a;--muted:#687384;--line:#d9e0e7;--accent:#245c4f;--accent2:#e7f2ee;--danger:#a33a3a;--ok:#17704a;--shadow:0 12px 32px rgb(17 24 39/.08);--r:14px}
 @media(prefers-color-scheme:dark){:root{--bg:#11161b;--panel:#182027;--panel2:#202a32;--text:#edf2f7;--muted:#aab4bf;--line:#34414b;--accent:#7bc4b0;--accent2:#203b35;--danger:#ff9a9a;--ok:#83d7ae;--shadow:none}}
@@ -50,7 +50,7 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="brand"><h1>Theme 工作台 v2.16</h1><p>Blogger Theme Workbench · 最後修改：2026-08-12（修正忠實預覽：移除 b:skin 尾端孤立註解＋依 data-theme 切換）</p></div><div class="actions"><button class="btn" id="newBtn" disabled>載入另一份 Theme</button><button class="btn" id="validateBtn" disabled>檢查完整 Theme</button><button class="btn" id="copyBtn" disabled>複製完整 Theme</button><button class="btn primary" id="downloadBtn" disabled>下載完整 Theme</button></div></header>
+<header class="top"><div class="brand"><h1>Theme 工作台 v2.17</h1><p>Blogger Theme Workbench · 最後修改：2026-08-12（修正忠實預覽：移除 b:skin 尾端孤立註解＋依 data-theme 切換）</p></div><div class="actions"><button class="btn" id="newBtn" disabled>載入另一份 Theme</button><button class="btn" id="validateBtn" disabled>檢查完整 Theme</button><button class="btn" id="copyBtn" disabled>複製完整 Theme</button><button class="btn primary" id="downloadBtn" disabled>下載完整 Theme</button></div></header>
 <main>
 <section class="welcome" id="welcome"><div class="hero"><article class="card intro"><h2>只顯示你真的會改的地方。</h2><p>貼入完整 Blogger Theme。工作台會保留原始 XML，只把主選單、文章字體、段落間距、分隔線與引用區塊整理成人看得懂的設定，並辨識 Theme 內已存在的 Median UI 文章元件。輸出時以局部 Patch 放回原始 Theme，不重寫其他程式。</p><div class="promise"><div><strong>會修改</strong><span>Main Menu 與目前畫面中列出的外觀值。文章元件頁只做辨識，不另裝一套 CSS。</span></div><div><strong>不會修改</strong><span>JavaScript、其他 Widgets、未顯示的 CSS 與 Blogger 系統設定。</span></div><div><strong>資料位置</strong><span>只在目前瀏覽器分頁處理，不會上傳。</span></div><div><strong>輸出方式</strong><span>複製或下載重新組裝後的完整 Theme XML。</span></div></div></article><section class="card"><h3 style="margin-top:0">貼上 Blogger Theme</h3><p style="color:var(--muted);font-size:14px;line-height:1.55">可從 Blogger Theme 編輯器全選複製，也可開啟已下載的 XML。</p><textarea id="sourceInput" spellcheck="false" placeholder="請貼上完整 Blogger Theme…"></textarea><div class="row" style="margin-top:12px"><button class="btn primary" id="analyzeBtn">讀取 Theme</button><label class="file">或開啟 Theme 檔<input id="fileInput" type="file" accept=".xml,.txt,.html,.css,text/xml,application/xml,text/plain"></label></div><div class="hint">建議先在 Blogger 後台備份目前 Theme。工作台會在輸出前檢查完整 XML，但實際套用後仍應先預覽網站。</div></section></div></section>
 <section class="workspace" id="workspace"><div class="overview"><div class="metric"><strong id="menuCount">0</strong><span>辨識到的主選單</span></div><div class="metric"><strong id="styleCount">0</strong><span>可調整的外觀設定</span></div><div class="metric"><strong id="changeCount">0</strong><span>目前變更</span></div></div><div class="layout"><nav class="nav"><button class="active" data-pane="menu">選單管理<small>名稱、連結、排序</small></button><button data-pane="style">文章外觀<small>字體、段落、引用</small></button><button data-pane="components">文章元件<small>Median 原生元件辨識</small></button><button data-pane="output">輸出與檢查<small>摘要、完整 Theme</small></button></nav><div>
@@ -130,8 +130,7 @@ function hasNcQuoteTrim(text){
 function applyNcQuoteTrim(text,enabled){
   let out=removeMarkedBlock(text,NC_QUOTE_TRIM_CSS_START,NC_QUOTE_TRIM_CSS_END);
   if(!enabled)return out;
-  const skinClose=out.indexOf('</b:skin>');
-  if(skinClose>=0)out=out.slice(0,skinClose)+'\n'+NC_QUOTE_TRIM_CSS+'\n'+out.slice(skinClose);
+  out=insertCssBeforeSkinSentinel(out,NC_QUOTE_TRIM_CSS);
   return out;
 }
 function renderQuoteTrimInstaller(){
@@ -186,12 +185,21 @@ function removeMarkedBlock(text,start,end){
   const e=text.indexOf(end,s);
   return e<0?text:text.slice(0,s)+text.slice(e+end.length);
 }
+function insertCssBeforeSkinSentinel(text,css){
+  const skinClose=text.indexOf('</b:skin>');
+  if(skinClose<0)return text;
+  const before=text.slice(0,skinClose);
+  const sentinel=/^\s*\/\*\s*$/gm;
+  let m,last=null;
+  while((m=sentinel.exec(before)))last=m;
+  const pos=last&&skinClose-last.index<1200?last.index:skinClose;
+  return text.slice(0,pos)+'\n'+css+'\n'+text.slice(pos);
+}
 function applyNcAccordion(text,enabled){
   let out=removeMarkedBlock(text,NC_ACCORDION_CSS_START,NC_ACCORDION_CSS_END);
   out=removeMarkedBlock(out,NC_ACCORDION_JS_START,NC_ACCORDION_JS_END);
   if(!enabled)return out;
-  const skinClose=out.indexOf('</b:skin>');
-  if(skinClose>=0)out=out.slice(0,skinClose)+'\n'+NC_ACCORDION_CSS+'\n'+out.slice(skinClose);
+  out=insertCssBeforeSkinSentinel(out,NC_ACCORDION_CSS);
   const bodyClose=out.lastIndexOf('</body>');
   if(bodyClose>=0)out=out.slice(0,bodyClose)+'\n'+NC_ACCORDION_JS+'\n'+out.slice(bodyClose);
   return out;
@@ -231,8 +239,7 @@ function hasNcYoutube(text){
 function applyNcYoutube(text,enabled){
   let out=removeMarkedBlock(text,NC_YOUTUBE_CSS_START,NC_YOUTUBE_CSS_END);
   if(!enabled)return out;
-  const skinClose=out.indexOf('</b:skin>');
-  if(skinClose>=0)out=out.slice(0,skinClose)+'\n'+NC_YOUTUBE_CSS+'\n'+out.slice(skinClose);
+  out=insertCssBeforeSkinSentinel(out,NC_YOUTUBE_CSS);
   return out;
 }
 function renderYoutubeInstaller(){
@@ -279,8 +286,8 @@ function renderNativeComponents(){
 
 function parseBloggerVariableValues(text){const values={};const re=/<Variable\b[^>]*\bname=(['"])(.*?)\1[^>]*\bvalue=(['"])(.*?)\3[^>]*\/?>/gi;let m;while((m=re.exec(text)))values[m[2]]=m[4];return values}
 function resolveBloggerVars(css,text){const values=parseBloggerVariableValues(text);let previous='',out=css;for(let pass=0;pass<8&&previous!==out;pass++){previous=out;Object.keys(values).forEach(k=>{values[k]=String(values[k]).replace(/\$\(([^)]+)\)/g,(a,n)=>values[n]??a)});out=out.replace(/\$\(([^)]+)\)/g,(a,n)=>values[n]??a)}return out.replace(/\$\(([^)]+)\)/g,'initial')}
-function cleanPreviewCssPart(css=''){let out=css.replace(/\/\*<!\[CDATA\[\*\//g,'').replace(/\/\*\]\]>\*\//g,'');const trimmed=out.trimEnd();if(trimmed.endsWith('/*'))out=trimmed.slice(0,-2);return out} function extractThemeCss(text){let css='';const skin=/<b:skin\b[^>]*><!\[CDATA\[([\s\S]*?)\]\]><\/b:skin>/i.exec(text);if(skin)css+='\n'+cleanPreviewCssPart(skin[1]);[...text.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].forEach(m=>{const part=cleanPreviewCssPart(m[1]);if(/\.pE\b|blockquote\b|--themeBg\b|--postBody-font\b/.test(part))css+='\n'+part});return resolveBloggerVars(css,text)}
-function buildThemePreviewDoc(themeText,mode){const css=extractThemeCss(themeText),safeMode=mode==='dark'?'dark':'light';return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}\nhtml,body{min-height:100%;margin:0}body{padding:0}.wb-preview-shell{max-width:780px;margin:0 auto;padding:28px 28px 60px}</style></head><body class="nB" data-theme="${safeMode}"><main class="wb-preview-shell mainWrapper"><article class="post pE"><h1>這是一篇文章的標題</h1><p>這是一段文章內文，用來觀察字體大小、行高與段落之間的距離。</p><blockquote>這是一段引用文字。它的間距、左側線、透明度、背景與其他細節，都直接來自目前載入的 Theme。</blockquote><hr><p>分隔線之後的另一段文字。</p><div class="note">這是 Theme 原生 Note，用來一起檢查 Light / Dark mode 的文章元件。</div></article></main></body></html>`}
+function extractThemeCss(text){let css='';const skin=/<b:skin\b[^>]*><!\[CDATA\[([\s\S]*?)\]\]><\/b:skin>/i.exec(text);if(skin)css+='\n'+skin[1];[...text.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].forEach(m=>{const part=m[1].replace(/\/\*<!\[CDATA\[\*\//g,'').replace(/\/\*\]\]>\*\//g,'');if(/\.pE\b|blockquote\b|--themeBg\b|--postBody-font\b/.test(part))css+='\n'+part});return resolveBloggerVars(css,text)}
+function buildThemePreviewDoc(themeText,mode){const css=extractThemeCss(themeText),safeMode=mode==='dark'?'dark':'light';return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}\nhtml,body{min-height:100%;margin:0}body{padding:0}.wb-preview-shell{max-width:780px;margin:0 auto;padding:28px 28px 60px}</style></head><body class="nB" data-theme="${safeMode}"><main class="wb-preview-shell"><article class="pE"><h1>這是一篇文章的標題</h1><p>這是一段文章內文，用來觀察字體大小、行高與段落之間的距離。</p><blockquote>這是一段引用文字。它的間距、左側線、透明度、背景與其他細節，都直接來自目前載入的 Theme。</blockquote><hr><p>分隔線之後的另一段文字。</p><div class="note">這是 Theme 原生 Note，用來一起檢查 Light / Dark mode 的文章元件。</div></article></main></body></html>`}
 function renderThemePreview(){const frame=$('#themePreviewFrame');if(!frame||!state.original)return;frame.srcdoc=buildThemePreviewDoc(state.output||state.original,state.previewMode);const light=$('#previewLightBtn'),dark=$('#previewDarkBtn');if(light)light.classList.toggle('active',state.previewMode==='light');if(dark)dark.classList.toggle('active',state.previewMode==='dark')}
 
 const STYLE_GROUPS=[
@@ -400,7 +407,7 @@ function applyPreview(){renderThemePreview()}
 function renderChanges(){const ul=$('#changeList');ul.innerHTML=state.changes.length?state.changes.map(x=>`<li>✓ ${esc(x)}</li>`).join(''):'<li>目前沒有修改；輸出內容會與原始 Theme 相同。</li>'}
 function validate(){const out=rebuild(),before=parseXml(state.original),after=parseXml(out),box=$('#validationResult');const landmarks=/<html\b/i.test(out)&&/<b:skin\b/i.test(out)&&/<\/html>/i.test(out)&&(!state.menuRegion||parseMenus(out,findMenuRegion(out)).length===state.menus.length);let ok=false,msg='';if(before.ok){ok=after.ok&&landmarks;msg=ok?`嚴格 XML 結構正常。輸出共 ${Math.round(out.length/1024)} KB，包含 ${state.changes.length} 項修改。`:`XML 檢查未通過：${after.message||'缺少 Theme 必要結構'}`}else{ok=landmarks;msg=ok?`Blogger Theme 含有延伸語法，瀏覽器無法當作一般 XML 嚴格驗證；但完整 Theme、b:skin、結尾標記與 Main Menu Patch 結構均正常。共 ${state.changes.length} 項修改。`:`Theme 結構檢查未通過：必要標記或 Main Menu 數量不一致。`}box.className='notice '+(ok?'ok':'');box.textContent=msg;toast(ok?'完整 Theme 結構檢查正常。':'Theme 結構檢查未通過。',!ok);return ok}
 async function copyOutput(){const out=rebuild();try{await navigator.clipboard.writeText(out);toast('已複製完整 Theme，可貼到 Blogger 後台。')}catch{toast('瀏覽器無法直接複製，請使用「查看完整 Theme」手動複製。',true)}}
-function download(){const out=rebuild();const r=parseXml(out);if(!r.ok&&!confirm('完整 Theme 未通過 XML 檢查。仍要下載嗎？'))return;const blob=new Blob([out],{type:'application/xml;charset=utf-8'}),a=document.createElement('a'),stamp=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);a.href=URL.createObjectURL(blob);a.download=state.filename.replace(/\.xml$/i,`-v2.16-${stamp}.xml`);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('完整 Theme 已下載。上傳前請保留 Blogger 原始備份。')}
+function download(){const out=rebuild();const r=parseXml(out);if(!r.ok&&!confirm('完整 Theme 未通過 XML 檢查。仍要下載嗎？'))return;const blob=new Blob([out],{type:'application/xml;charset=utf-8'}),a=document.createElement('a'),stamp=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);a.href=URL.createObjectURL(blob);a.download=state.filename.replace(/\.xml$/i,`-v2.17-${stamp}.xml`);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('完整 Theme 已下載。上傳前請保留 Blogger 原始備份。')}
 function reset(){if(!confirm('要還原本次所有 Menu 與外觀修改嗎？文章元件頁只是辨識結果，不會被修改。'))return;state.menus=structuredClone(state.originalMenus);state.styles={...state.originalStyles};state.quoteParagraphTrimEnabled=state.originalQuoteParagraphTrimEnabled;state.accordionEnabled=state.originalAccordionEnabled;state.youtubeEnabled=state.originalYoutubeEnabled;renderMenus();renderStyles();renderQuoteTrimInstaller();renderAccordionInstaller();renderYoutubeInstaller();rebuild();$('#validationResult').className='notice';$('#validationResult').textContent='已還原所有修改，尚未重新檢查。';toast('已還原到剛載入 Theme 時的狀態。')}
 $$('.nav button').forEach(b=>b.onclick=()=>{$$('.nav button').forEach(x=>x.classList.toggle('active',x===b));$$('.pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+b.dataset.pane));if(b.dataset.pane==='output')rebuild()});
 $('#previewLightBtn').onclick=()=>{state.previewMode='light';renderThemePreview()};
