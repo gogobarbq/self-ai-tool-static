@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>BBQ Portal Workbench v2.4</title>
+<title>BBQ Portal Workbench v2.5</title>
 <style>
 :root{
   --bg:#f5f6f8;--panel:#fff;--line:#e5e7eb;--text:#20242c;--muted:#6b7280;
@@ -77,8 +77,8 @@ main{max-width:1500px;margin:auto;padding:16px;display:grid;grid-template-column
 <body>
 <header>
   <div class="brand">
-    <h1>BBQ Portal Workbench <span class="version-badge">v2.4</span></h1>
-    <p>HTML 就是專案檔。可直接開啟 v2.x 產出的 Portal HTML；v2.4 恢復 compact 版面並修正 Last updated。</p>
+    <h1>BBQ Portal Workbench <span class="version-badge">v2.5</span></h1>
+    <p>HTML 就是專案檔。可直接開啟 v2.x 產出的 Portal HTML；v2.5 強化 Blogger 對中文標點與全形符號的相容性。</p>
   </div>
   <div class="actions">
     <button class="btn" id="openHtmlBtn">開啟 Portal HTML</button>
@@ -148,7 +148,7 @@ main{max-width:1500px;margin:auto;padding:16px;display:grid;grid-template-column
             <input id="typeInput" placeholder="Blogger / Apps Script / Frontend" />
           </div>
           <div class="small" style="margin-top:-4px;margin-bottom:12px">
-            Portal 不使用 emoji；分類與連結會自動使用簡單符號區分。
+            Portal 以文字階層呈現，不依賴 emoji 或特殊符號。
           </div>
         </div>
         <div class="editor-actions">
@@ -201,8 +201,8 @@ main{max-width:1500px;margin:auto;padding:16px;display:grid;grid-template-column
 <input id="fileInput" type="file" accept=".html,text/html" hidden />
 
 <script>
-const WORKBENCH_VERSION = "2.4";
-const PORTAL_FORMAT_VERSION = "2.4";
+const WORKBENCH_VERSION = "2.5";
+const PORTAL_FORMAT_VERSION = "2.5";
 const STORAGE_KEY = "bbqPortalWorkbenchV2";
 
 const initialData = [
@@ -231,7 +231,7 @@ const initialData = [
   {id:"dry",kind:"link",name:"Prefer Dry Home",parentId:"apps",url:"",description:"除濕位置、庫存、檢查與更換管理",type:"Google Apps Script",order:10}
 ];
 
-let data = loadLocalDraft() || deepClone(initialData);
+let data = cleanImportedItems(loadLocalDraft() || deepClone(initialData));
 let selectedId = data[0]?.id || null;
 let sourceName = loadLocalDraft() ? "此裝置暫存草稿" : "Workbench 內建初始內容";
 let currentPortalVersion = "0.0.0";
@@ -270,6 +270,13 @@ function cleanImportedItems(items){
 function localDateStamp(d=new Date()){
   const pad=n=>String(n).padStart(2,"0");
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function asciiSafeJson(value){
+  return JSON.stringify(value)
+    .replace(/[\u0080-\uffff<>&\u2028\u2029]/g, ch => {
+      const code=ch.charCodeAt(0).toString(16).padStart(4,"0");
+      return "\\u"+code;
+    });
 }
 function saveLocalDraft(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify({items:data,sourceName,currentPortalVersion}));
@@ -385,9 +392,23 @@ function renderPreview(){
       links.forEach(link=>{
         const a=document.createElement("a");
         a.className="card";a.href=link.url||"#";a.target="_blank";a.rel="nofollow noopener";
-        a.innerHTML=`<div class="card-title">${escapeHtml(link.name)}</div>
-          ${link.description?`<div class="card-desc">${escapeHtml(link.description)}</div>`:""}
-          <div class="card-type">${escapeHtml(link.type||"Link")}${link.url?"":" · URL 待設定"}</div>`;
+        const title=document.createElement("div");
+        title.className="card-title";
+        title.textContent=link.name||"";
+        a.appendChild(title);
+
+        if(link.description){
+          const desc=document.createElement("div");
+          desc.className="card-desc";
+          desc.textContent=link.description;
+          a.appendChild(desc);
+        }
+
+        const type=document.createElement("div");
+        type.className="card-type";
+        type.textContent=(link.type||"Link")+(link.url?"":" · URL 待設定");
+        a.appendChild(type);
+
         cards.appendChild(a);
       });
       box.appendChild(cards);
@@ -485,8 +506,8 @@ function generatePortalHtml(){
   const portalVersion=bumpPatch(currentPortalVersion);
   const lastUpdated=localDateStamp(new Date());
   const config=buildEmbeddedConfig(portalVersion);
-  const configJson=JSON.stringify(config).replace(/</g,"\\u003c");
-  const itemsJson=JSON.stringify(data).replace(/</g,"\\u003c");
+  const configJson=asciiSafeJson(config);
+  const itemsJson=asciiSafeJson(data);
 
   return `<!-- BBQ Portal
 Portal Version: ${portalVersion}
@@ -543,9 +564,24 @@ function renderGroup(group,host,level){
     links.forEach(link=>{
       const a=document.createElement("a");
       a.className="bp-card";a.target="_blank";a.rel="nofollow noopener";a.href=link.url||"#";
-      a.innerHTML='<div class="bp-name">'+esc(link.name)+'</div>'
-        +(link.description?'<div class="bp-desc">'+esc(link.description)+'</div>':'')
-        +'<div class="bp-type">'+esc(link.type||"Link")+(link.url?'':' · URL 待設定')+'</div>';
+
+      const name=document.createElement("div");
+      name.className="bp-name";
+      name.textContent=link.name||"";
+      a.appendChild(name);
+
+      if(link.description){
+        const desc=document.createElement("div");
+        desc.className="bp-desc";
+        desc.textContent=link.description;
+        a.appendChild(desc);
+      }
+
+      const type=document.createElement("div");
+      type.className="bp-type";
+      type.textContent=(link.type||"Link")+(link.url?"":" · URL 待設定");
+      a.appendChild(type);
+
       cards.appendChild(a);
     });
     box.appendChild(cards);
@@ -559,7 +595,12 @@ kids(null).filter(x=>x.kind==="group").forEach(g=>renderGroup(g,root,0));
 
 const meta=document.createElement("div");
 meta.className="bp-meta";
-meta.innerHTML="Portal v"+esc(portalVersion)+"<br>Last updated: "+esc(lastUpdated);
+const verLine=document.createElement("div");
+verLine.textContent="Portal v"+portalVersion;
+const dateLine=document.createElement("div");
+dateLine.textContent="Last updated: "+lastUpdated;
+meta.appendChild(verLine);
+meta.appendChild(dateLine);
 root.appendChild(meta);
 })();
 <\/script>`;
@@ -599,7 +640,7 @@ $("fileInput").onchange=async e=>{
 $("saveHtmlBtn").onclick=()=>{
   currentGeneratedHtml=generatePortalHtml();
   const next=bumpPatch(currentPortalVersion);
-  $("modalHint").textContent=`這次輸出會標記為 Portal v${next}，並顯示 Last updated 日期；同時內嵌完整可回讀設定。`;
+  $("modalHint").textContent=`這次輸出會標記為 Portal v${next}，顯示 Last updated 日期，並以 Blogger-safe Unicode 方式內嵌完整可回讀設定。`;
   $("codeArea").value=currentGeneratedHtml;
   $("modal").classList.add("open");
 };
