@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>BBQ Portal Workbench v2.4</title>
+<style>
+:root{
+  --bg:#f5f6f8;--panel:#fff;--line:#e5e7eb;--text:#20242c;--muted:#6b7280;
+  --accent:#6d5dfc;--accent-soft:#efedff;--danger:#b42318;--ok:#067647;
+  --radius:18px;--shadow:0 8px 28px rgba(25,31,44,.07)
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+header{
+  position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:14px;
+  padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(245,246,248,.94);backdrop-filter:blur(12px)
+}
+.brand h1{margin:0;font-size:18px}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:#fff;color:var(--text);border-radius:11px;padding:8px 11px}
+.btn:hover{background:#fafafa}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.danger{color:var(--danger)}
+main{max-width:1500px;margin:auto;padding:16px;display:grid;grid-template-columns:minmax(280px,360px) minmax(300px,420px) 1fr;gap:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;min-width:0}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 15px;border-bottom:1px solid var(--line)}
+.panel-head h2{margin:0;font-size:15px}
+.panel-body{padding:14px}
+.toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.hint{background:#fff8e8;border:1px solid #f3dfad;border-radius:11px;padding:10px 11px;color:#7a5b12;font-size:12px;margin-bottom:12px}
+.tree{display:flex;flex-direction:column;gap:6px}
+.node{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px 9px;background:#fff}
+.node.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.node:hover{background:#fafafa}
+.node-marker{width:30px;height:30px;border-radius:9px;background:#f3f4f6;display:grid;place-items:center;font-weight:700;color:#6b7280}
+.node-title{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node-meta{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node-mini{border:0;background:transparent;padding:5px;border-radius:8px}
+.depth-0{margin-left:0}.depth-1{margin-left:16px}.depth-2{margin-left:32px}.depth-3{margin-left:48px}.depth-4{margin-left:64px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff;color:var(--text)}
+.field textarea{min-height:76px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.editor-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.preview-shell{background:#eef0f4;padding:14px;min-height:75vh}
+.preview{max-width:950px;margin:auto;background:#fff;border-radius:20px;padding:28px;min-height:70vh;box-shadow:0 10px 35px rgba(31,35,48,.08)}
+.preview-title{font-size:24px;font-weight:800;margin:0 0 2px}
+.preview-sub{color:var(--muted);font-size:12px;margin-bottom:14px}
+.preview-section{margin:16px 0}
+.preview-section>h3{margin:0 0 8px;font-size:17px;font-weight:800}
+.preview-nested{margin:6px 0 0 6px;padding-left:8px;border-left:2px solid #eceef2}
+.preview-nested>h4{margin:0 0 7px;font-size:13px;color:#4b5563;font-weight:700}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:7px}
+.card{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff}
+.card:hover{box-shadow:0 7px 18px rgba(20,25,35,.07);transform:translateY(-1px)}
+.card-title{font-weight:700;font-size:14px}.card-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.35}.card-type{font-size:10px;color:var(--accent);margin-top:4px}
+.status{font-size:11px;color:var(--muted)}
+.version-badge{display:inline-block;padding:2px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:700}
+.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+.modal.open{display:flex}
+.dialog{width:min(900px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:18px;padding:16px}
+.dialog-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.dialog h3{margin:0;font-size:16px}
+.dialog textarea{width:100%;min-height:430px;border:1px solid var(--line);border-radius:12px;padding:12px;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+.small{font-size:12px;color:var(--muted)}
+.note-ok{color:var(--ok)}
+@media(max-width:1100px){main{grid-template-columns:1fr 1fr}.preview-panel{grid-column:1 / -1}}
+@media(max-width:760px){header{align-items:flex-start;flex-direction:column}main{grid-template-columns:1fr;padding:10px}.preview-panel{grid-column:auto}.row{grid-template-columns:1fr}.preview{padding:18px}.actions{width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>BBQ Portal Workbench <span class="version-badge">v2.4</span></h1>
+    <p>HTML 就是專案檔。可直接開啟 v2.x 產出的 Portal HTML；v2.4 恢復 compact 版面並修正 Last updated。</p>
+  </div>
+  <div class="actions">
+    <button class="btn" id="openHtmlBtn">開啟 Portal HTML</button>
+    <button class="btn primary" id="saveHtmlBtn">儲存 Portal HTML</button>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Portal 結構</h2>
+      <span class="status" id="statusText">內建初始內容</span>
+    </div>
+    <div class="panel-body">
+      <div class="hint">
+        不需要另外管理 JSON。Workbench 會把完整結構資料內嵌在每次輸出的 HTML 裡，之後只要再開啟那份 HTML 即可繼續編輯。
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="addGroupBtn">＋ 分類</button>
+        <button class="btn" id="addLinkBtn">＋ 連結</button>
+        <button class="btn" id="moveUpBtn">↑ 上移</button>
+        <button class="btn" id="moveDownBtn">↓ 下移</button>
+      </div>
+      <div id="tree" class="tree"></div>
+      <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+        <button class="btn" id="resetBtn">恢復目前 BBQ 初始內容</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>編輯項目</h2>
+      <span class="small" id="selectedLabel">—</span>
+    </div>
+    <div class="panel-body">
+      <div id="editorEmpty" class="empty">請先從左邊選一個項目。</div>
+      <div id="editor" hidden>
+        <div class="field">
+          <label>顯示名稱</label>
+          <input id="nameInput" />
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>類型</label>
+            <select id="kindInput">
+              <option value="group">分類</option>
+              <option value="link">連結</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>父分類</label>
+            <select id="parentInput"></select>
+          </div>
+        </div>
+        <div class="link-only">
+          <div class="field">
+            <label>URL</label>
+            <input id="urlInput" placeholder="https://..." />
+          </div>
+          <div class="field">
+            <label>說明</label>
+            <textarea id="descInput" placeholder="這個入口是做什麼的"></textarea>
+          </div>
+          <div class="field">
+            <label>標籤 / 類型</label>
+            <input id="typeInput" placeholder="Blogger / Apps Script / Frontend" />
+          </div>
+          <div class="small" style="margin-top:-4px;margin-bottom:12px">
+            Portal 不使用 emoji；分類與連結會自動使用簡單符號區分。
+          </div>
+        </div>
+        <div class="editor-actions">
+          <button class="btn danger" id="deleteBtn">刪除這個項目</button>
+        </div>
+      </div>
+
+      <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:12px">
+        <div class="small">
+          目前來源：<strong id="sourceName">Workbench 內建初始內容</strong><br>
+          Portal 格式版本：<strong id="formatVersion">2.0</strong><br>
+          下次輸出版本：<strong id="nextVersion">1.0.0</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel preview-panel">
+    <div class="panel-head">
+      <h2>即時預覽</h2>
+      <span class="small">BBQ Portal Page</span>
+    </div>
+    <div class="preview-shell">
+      <div class="preview">
+        <div class="preview-title">BBQ Portal</div>
+        <div class="preview-sub">My private starting point.</div>
+        <div id="previewContent"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="modal">
+  <div class="dialog">
+    <div class="dialog-head">
+      <div>
+        <h3>Portal HTML 已產生</h3>
+        <div class="small" id="modalHint"></div>
+      </div>
+      <button class="btn" id="closeModalBtn">關閉</button>
+    </div>
+    <textarea id="codeArea" readonly></textarea>
+    <div class="actions" style="margin-top:10px">
+      <button class="btn primary" id="downloadBtn">下載 HTML</button>
+      <button class="btn" id="copyBtn">複製 HTML</button>
+    </div>
+  </div>
+</div>
+
+<input id="fileInput" type="file" accept=".html,text/html" hidden />
+
+<script>
+const WORKBENCH_VERSION = "2.4";
+const PORTAL_FORMAT_VERSION = "2.4";
+const STORAGE_KEY = "bbqPortalWorkbenchV2";
+
+const initialData = [
+  {id:"blogs",kind:"group",name:"Blogs",parentId:null,order:10},
+  {id:"public",kind:"group",name:"Public",parentId:"blogs",order:10},
+  {id:"yesgogogo",kind:"link",name:"不繫之舟",parentId:"public",url:"https://yesgogogo.blogspot.com",description:"",type:"Blogger",order:10},
+  {id:"life",kind:"link",name:"Life Snippet",parentId:"public",url:"https://yesgogogo-photo-journal.blogspot.com",description:"",type:"Blogger",order:20},
+  {id:"kuan",kind:"link",name:"Kuan Note",parentId:"public",url:"https://kuansnotes.blogspot.com",description:"",type:"Blogger",order:30},
+  {id:"arts",kind:"link",name:"Arts Snippet",parentId:"public",url:"https://artssnippet.blogspot.com",description:"",type:"Blogger",order:40},
+  {id:"food",kind:"link",name:"Food Snippet",parentId:"public",url:"https://foodsnippet.blogspot.com",description:"",type:"Blogger",order:50},
+  {id:"clip",kind:"link",name:"Clip Snippet",parentId:"public",url:"https://clipsnippet.blogspot.com",description:"",type:"Blogger",order:60},
+
+  {id:"private",kind:"group",name:"Private",parentId:"blogs",order:20},
+  {id:"family",kind:"link",name:"Family Snippet",parentId:"private",url:"https://familysnippet.blogspot.com",description:"",type:"Blogger",order:10},
+  {id:"tm",kind:"link",name:"TM Snippet",parentId:"private",url:"https://tmsnippet.blogspot.com",description:"",type:"Blogger",order:20},
+  {id:"crumb",kind:"link",name:"gogobbq - 麵包屑",parentId:"private",url:"https://gogobbq.blogspot.com",description:"",type:"Blogger",order:30},
+  {id:"achai",kind:"link",name:"Hi Achai",parentId:"private",url:"https://hiachai.blogspot.com",description:"",type:"Blogger",order:40},
+  {id:"peanut",kind:"link",name:"peanutbarbq",parentId:"private",url:"https://peanutbarbq.blogspot.com",description:"",type:"Blogger",order:50},
+
+  {id:"tools",kind:"group",name:"Tools",parentId:null,order:20},
+  {id:"static",kind:"group",name:"Static / GitHub Pages",parentId:"tools",order:10},
+  {id:"toolhome",kind:"link",name:"BBQ 小工具站",parentId:"static",url:"https://gogobarbq.github.io/self-ai-tool-static/index.html",description:"純前端小工具總入口",type:"GitHub Pages",order:10},
+  {id:"imageblog",kind:"link",name:"圖文合併工具",parentId:"static",url:"",description:"圖文處理 / Blogger 發布相關工具",type:"Frontend",order:20},
+  {id:"theme",kind:"link",name:"Blogger Theme Workbench",parentId:"static",url:"",description:"Blogger 佈景主題調整工具",type:"Frontend",order:30},
+  {id:"apps",kind:"group",name:"Apps Script",parentId:"tools",order:20},
+  {id:"dry",kind:"link",name:"Prefer Dry Home",parentId:"apps",url:"",description:"除濕位置、庫存、檢查與更換管理",type:"Google Apps Script",order:10}
+];
+
+let data = loadLocalDraft() || deepClone(initialData);
+let selectedId = data[0]?.id || null;
+let sourceName = loadLocalDraft() ? "此裝置暫存草稿" : "Workbench 內建初始內容";
+let currentPortalVersion = "0.0.0";
+let currentGeneratedHtml = "";
+
+const $ = id => document.getElementById(id);
+
+function deepClone(x){ return JSON.parse(JSON.stringify(x)); }
+function uid(prefix){ return prefix+"_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+function decodeEntities(value){
+  if(typeof value!=="string" || !value.includes("&")) return value;
+  let out=value;
+  for(let i=0;i<3;i++){
+    const ta=document.createElement("textarea");
+    ta.innerHTML=out;
+    const next=ta.value;
+    if(next===out) break;
+    out=next;
+  }
+  return out;
+}
+function cleanImportedItems(items){
+  return items.map(item=>{
+    const copy={...item};
+    ["name","description","type","url"].forEach(key=>{
+      if(typeof copy[key]==="string") copy[key]=decodeEntities(copy[key]);
+    });
+    return copy;
+  });
+}
+function localDateStamp(d=new Date()){
+  const pad=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function saveLocalDraft(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({items:data,sourceName,currentPortalVersion}));
+}
+function loadLocalDraft(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    if(!Array.isArray(obj.items)) return null;
+    sourceName = obj.sourceName || "此裝置暫存草稿";
+    currentPortalVersion = obj.currentPortalVersion || "0.0.0";
+    return obj.items;
+  }catch{return null}
+}
+function markDirty(){
+  $("statusText").textContent = "已修改（自動暫存）";
+  saveLocalDraft();
+}
+function byId(id){ return data.find(x=>x.id===id); }
+function childrenOf(parentId){
+  return data.filter(x=>(x.parentId??null)===(parentId??null)).sort((a,b)=>(a.order||0)-(b.order||0));
+}
+function depthOf(node){
+  let d=0,cur=node,guard=0;
+  while(cur && cur.parentId && guard++<20){ d++; cur=byId(cur.parentId); }
+  return Math.min(d,4);
+}
+function descendantsOf(id){
+  const set=new Set();
+  (function walk(pid){
+    childrenOf(pid).forEach(c=>{set.add(c.id);walk(c.id)});
+  })(id);
+  return set;
+}
+function normalizeOrders(parentId){
+  childrenOf(parentId).forEach((x,i)=>x.order=(i+1)*10);
+}
+function bumpPatch(v){
+  const m=String(v||"0.0.0").match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if(!m) return "1.0.0";
+  return [m[1],m[2],Number(m[3])+1].join(".");
+}
+
+function renderTree(){
+  const host=$("tree"); host.innerHTML="";
+  if(!data.length){host.innerHTML='<div class="empty">目前沒有任何項目。</div>';return}
+  function walk(parentId){
+    childrenOf(parentId).forEach(node=>{
+      const row=document.createElement("div");
+      row.className=`node depth-${depthOf(node)} ${node.id===selectedId?"selected":""}`;
+      row.innerHTML=`
+        <div class="node-marker">${node.kind==="group" ? (depthOf(node)===0 ? "◇" : "○") : "•"}</div>
+        <div>
+          <div class="node-title">${escapeHtml(node.name||"(未命名)")}</div>
+          <div class="node-meta">${node.kind==="group"?"分類":escapeHtml(node.type||"連結")}</div>
+        </div>
+        <button class="node-mini" aria-label="編輯">✎</button>`;
+      row.onclick=()=>{selectedId=node.id;renderAll()};
+      host.appendChild(row);
+      if(node.kind==="group") walk(node.id);
+    });
+  }
+  walk(null);
+}
+
+function renderEditor(){
+  const node=byId(selectedId);
+  $("editor").hidden=!node;
+  $("editorEmpty").hidden=!!node;
+  $("selectedLabel").textContent=node?node.name:"—";
+  $("sourceName").textContent=sourceName;
+  $("formatVersion").textContent=PORTAL_FORMAT_VERSION;
+  $("nextVersion").textContent=bumpPatch(currentPortalVersion);
+  if(!node)return;
+
+  $("nameInput").value=node.name||"";
+  $("kindInput").value=node.kind||"link";
+  $("urlInput").value=node.url||"";
+  $("descInput").value=node.description||"";
+  $("typeInput").value=node.type||"";
+
+  document.querySelectorAll(".link-only").forEach(el=>el.style.display=node.kind==="link"?"":"none");
+
+  const blocked=descendantsOf(node.id); blocked.add(node.id);
+  const select=$("parentInput");
+  select.innerHTML='<option value="">（最上層）</option>';
+  data.filter(x=>x.kind==="group"&&!blocked.has(x.id))
+      .sort((a,b)=>a.name.localeCompare(b.name,"zh-Hant"))
+      .forEach(group=>{
+        const opt=document.createElement("option");
+        opt.value=group.id;
+        opt.textContent=`${"　".repeat(depthOf(group))}${group.name}`;
+        select.appendChild(opt);
+      });
+  select.value=node.parentId||"";
+}
+
+function renderPreview(){
+  const root=$("previewContent");root.innerHTML="";
+  function renderGroup(group,host,level){
+    const box=document.createElement("div");
+    box.className=level===0?"preview-section":"preview-nested";
+    const h=document.createElement(level===0?"h3":"h4");
+    h.textContent=group.name;box.appendChild(h);
+
+    const kids=childrenOf(group.id);
+    const links=kids.filter(x=>x.kind==="link");
+    const groups=kids.filter(x=>x.kind==="group");
+
+    if(links.length){
+      const cards=document.createElement("div");cards.className="cards";
+      links.forEach(link=>{
+        const a=document.createElement("a");
+        a.className="card";a.href=link.url||"#";a.target="_blank";a.rel="nofollow noopener";
+        a.innerHTML=`<div class="card-title">${escapeHtml(link.name)}</div>
+          ${link.description?`<div class="card-desc">${escapeHtml(link.description)}</div>`:""}
+          <div class="card-type">${escapeHtml(link.type||"Link")}${link.url?"":" · URL 待設定"}</div>`;
+        cards.appendChild(a);
+      });
+      box.appendChild(cards);
+    }
+    groups.forEach(g=>renderGroup(g,box,level+1));
+    host.appendChild(box);
+  }
+  childrenOf(null).filter(x=>x.kind==="group").forEach(g=>renderGroup(g,root,0));
+}
+
+function renderAll(){renderTree();renderEditor();renderPreview()}
+
+function updateSelected(patch){
+  const node=byId(selectedId);if(!node)return;
+  Object.assign(node,patch);markDirty();renderAll();
+}
+
+$("nameInput").oninput=e=>updateSelected({name:e.target.value});
+$("urlInput").oninput=e=>updateSelected({url:e.target.value});
+$("descInput").oninput=e=>updateSelected({description:e.target.value});
+$("typeInput").oninput=e=>updateSelected({type:e.target.value});
+
+$("kindInput").onchange=e=>{
+  const node=byId(selectedId);if(!node)return;
+  const next=e.target.value;
+  if(node.kind==="group"&&next==="link"){
+    const kids=childrenOf(node.id);
+    if(kids.length&&!confirm("這個分類底下還有項目。改成連結後，子項目會移到它原本的父分類。要繼續嗎？")){
+      renderEditor();return;
+    }
+    kids.forEach(c=>c.parentId=node.parentId);
+  }
+  node.kind=next;markDirty();renderAll();
+};
+
+$("parentInput").onchange=e=>{
+  const node=byId(selectedId);if(!node)return;
+  const old=node.parentId||null;
+  node.parentId=e.target.value||null;
+  normalizeOrders(old);normalizeOrders(node.parentId);markDirty();renderAll();
+};
+
+$("addGroupBtn").onclick=()=>{
+  const selected=byId(selectedId);
+  const parent=selected?.kind==="group"?selected.id:(selected?.parentId||null);
+  const item={id:uid("group"),kind:"group",name:"新分類",parentId:parent,order:(childrenOf(parent).length+1)*10};
+  data.push(item);selectedId=item.id;markDirty();renderAll();
+};
+$("addLinkBtn").onclick=()=>{
+  const selected=byId(selectedId);
+  const parent=selected?.kind==="group"?selected.id:(selected?.parentId||null);
+  const item={id:uid("link"),kind:"link",name:"新連結",parentId:parent,url:"",description:"",type:"Link",order:(childrenOf(parent).length+1)*10};
+  data.push(item);selectedId=item.id;markDirty();renderAll();
+};
+
+function moveSelected(dir){
+  const node=byId(selectedId);if(!node)return;
+  const siblings=childrenOf(node.parentId);
+  const i=siblings.findIndex(x=>x.id===node.id),j=i+dir;
+  if(j<0||j>=siblings.length)return;
+  const other=siblings[j],tmp=node.order;node.order=other.order;other.order=tmp;
+  markDirty();renderAll();
+}
+$("moveUpBtn").onclick=()=>moveSelected(-1);
+$("moveDownBtn").onclick=()=>moveSelected(1);
+
+$("deleteBtn").onclick=()=>{
+  const node=byId(selectedId);if(!node)return;
+  const ids=descendantsOf(node.id);ids.add(node.id);
+  const msg=ids.size>1?`刪除「${node.name}」以及它底下所有項目？`:`刪除「${node.name}」？`;
+  if(!confirm(msg))return;
+  const parent=node.parentId||null;
+  data=data.filter(x=>!ids.has(x.id));
+  selectedId=parent||data[0]?.id||null;normalizeOrders(parent);markDirty();renderAll();
+};
+
+$("resetBtn").onclick=()=>{
+  if(!confirm("恢復成目前 BBQ Portal 初始內容？尚未輸出的修改會被取代。"))return;
+  data=deepClone(initialData);selectedId=data[0]?.id||null;sourceName="Workbench 內建初始內容";currentPortalVersion="0.0.0";
+  localStorage.removeItem(STORAGE_KEY);$("statusText").textContent="已恢復初始內容";renderAll();
+};
+
+function buildEmbeddedConfig(portalVersion){
+  return {
+    schema:"bbq-portal",
+    formatVersion:PORTAL_FORMAT_VERSION,
+    portalVersion,
+    generatedBy:`BBQ Portal Workbench ${WORKBENCH_VERSION}`,
+    generatedAt:new Date().toISOString(),
+    items:data
+  };
+}
+
+function generatePortalHtml(){
+  const portalVersion=bumpPatch(currentPortalVersion);
+  const lastUpdated=localDateStamp(new Date());
+  const config=buildEmbeddedConfig(portalVersion);
+  const configJson=JSON.stringify(config).replace(/</g,"\\u003c");
+  const itemsJson=JSON.stringify(data).replace(/</g,"\\u003c");
+
+  return `<!-- BBQ Portal
+Portal Version: ${portalVersion}
+Portal Format Version: ${PORTAL_FORMAT_VERSION}
+Generated By: BBQ Portal Workbench ${WORKBENCH_VERSION}
+Last Updated: ${lastUpdated}
+-->
+<div id="bbq-portal-root" data-bbq-portal-version="${portalVersion}" data-bbq-format-version="${PORTAL_FORMAT_VERSION}"></div>
+
+<script id="bbq-portal-config" type="application/json">${configJson}<\/script>
+
+<style>
+#bbq-portal-root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;color:#20242c;max-width:980px;margin:12px auto;padding:6px}
+#bbq-portal-root *{box-sizing:border-box}
+#bbq-portal-root .bp-title{font-size:26px;font-weight:800;margin:0 0 2px}
+#bbq-portal-root .bp-sub{color:#6b7280;font-size:12px;margin-bottom:14px}
+#bbq-portal-root .bp-section{margin:16px 0}
+#bbq-portal-root h2{font-size:18px;margin:0 0 8px;font-weight:800}
+#bbq-portal-root h3{font-size:14px;margin:10px 0 7px;color:#4b5563;font-weight:700}
+#bbq-portal-root .bp-nested{margin-left:8px;padding-left:8px;border-left:2px solid #eceef2}
+#bbq-portal-root .bp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px}
+#bbq-portal-root .bp-card{display:block;text-decoration:none;color:inherit;border:1px solid #e6e8ec;border-radius:10px;padding:9px 10px;background:#fff}
+#bbq-portal-root .bp-card:hover{box-shadow:0 7px 18px rgba(20,25,35,.07);transform:translateY(-1px)}
+#bbq-portal-root .bp-name{font-weight:700;font-size:14px}
+#bbq-portal-root .bp-desc{font-size:11px;color:#6b7280;margin-top:2px;line-height:1.35}
+#bbq-portal-root .bp-type{font-size:10px;color:#6d5dfc;margin-top:4px}
+#bbq-portal-root .bp-meta{font-size:10px;color:#9ca3af;margin-top:16px;text-align:right;line-height:1.35}
+@media(max-width:600px){#bbq-portal-root{padding:2px}#bbq-portal-root .bp-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}#bbq-portal-root .bp-card{padding:8px}#bbq-portal-root .bp-desc{display:none}}
+</style>
+
+<script>
+(function(){
+const items=${itemsJson};
+const portalVersion=${JSON.stringify(portalVersion)};
+const lastUpdated=${JSON.stringify(lastUpdated)};
+const root=document.getElementById("bbq-portal-root");
+const kids=id=>items.filter(x=>(x.parentId||null)===(id||null)).sort((a,b)=>(a.order||0)-(b.order||0));
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+
+root.innerHTML='<div class="bp-title">BBQ Portal</div><div class="bp-sub">My private starting point.</div>';
+
+function renderGroup(group,host,level){
+  const box=document.createElement("div");
+  box.className=level===0?"bp-section":"bp-nested";
+  const h=document.createElement(level===0?"h2":"h3");
+  h.textContent=group.name;box.appendChild(h);
+
+  const children=kids(group.id);
+  const links=children.filter(x=>x.kind==="link");
+  const groups=children.filter(x=>x.kind==="group");
+
+  if(links.length){
+    const cards=document.createElement("div");cards.className="bp-cards";
+    links.forEach(link=>{
+      const a=document.createElement("a");
+      a.className="bp-card";a.target="_blank";a.rel="nofollow noopener";a.href=link.url||"#";
+      a.innerHTML='<div class="bp-name">'+esc(link.name)+'</div>'
+        +(link.description?'<div class="bp-desc">'+esc(link.description)+'</div>':'')
+        +'<div class="bp-type">'+esc(link.type||"Link")+(link.url?'':' · URL 待設定')+'</div>';
+      cards.appendChild(a);
+    });
+    box.appendChild(cards);
+  }
+
+  groups.forEach(g=>renderGroup(g,box,level+1));
+  host.appendChild(box);
+}
+
+kids(null).filter(x=>x.kind==="group").forEach(g=>renderGroup(g,root,0));
+
+const meta=document.createElement("div");
+meta.className="bp-meta";
+meta.innerHTML="Portal v"+esc(portalVersion)+"<br>Last updated: "+esc(lastUpdated);
+root.appendChild(meta);
+})();
+<\/script>`;
+}
+
+function parsePortalHtml(text){
+  const doc=new DOMParser().parseFromString(text,"text/html");
+  const el=doc.querySelector("#bbq-portal-config");
+  if(!el) throw new Error("這份 HTML 找不到 BBQ Portal 的內嵌設定。請使用 Workbench v2 之後產生的 Portal HTML。");
+  let config;
+  try{config=JSON.parse(el.textContent)}catch{throw new Error("內嵌設定不是有效 JSON。")}
+  if(config.schema!=="bbq-portal") throw new Error("這不是 BBQ Portal HTML。");
+  if(!Array.isArray(config.items)) throw new Error("Portal 設定裡找不到 items。");
+  return config;
+}
+
+$("openHtmlBtn").onclick=()=>$("fileInput").click();
+
+$("fileInput").onchange=async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{
+    const text=await file.text();
+    const config=parsePortalHtml(text);
+    data=cleanImportedItems(config.items);
+    selectedId=data[0]?.id||null;
+    sourceName=file.name;
+    currentPortalVersion=config.portalVersion||"0.0.0";
+    saveLocalDraft();
+    $("statusText").textContent=`已開啟 ${file.name}`;
+    renderAll();
+  }catch(err){
+    alert("無法開啟 Portal HTML：\n"+err.message);
+  }
+  e.target.value="";
+};
+
+$("saveHtmlBtn").onclick=()=>{
+  currentGeneratedHtml=generatePortalHtml();
+  const next=bumpPatch(currentPortalVersion);
+  $("modalHint").textContent=`這次輸出會標記為 Portal v${next}，並顯示 Last updated 日期；同時內嵌完整可回讀設定。`;
+  $("codeArea").value=currentGeneratedHtml;
+  $("modal").classList.add("open");
+};
+
+$("closeModalBtn").onclick=()=>$("modal").classList.remove("open");
+$("modal").onclick=e=>{if(e.target===$("modal"))$("modal").classList.remove("open")};
+
+$("copyBtn").onclick=async()=>{
+  try{
+    await navigator.clipboard.writeText(currentGeneratedHtml);
+    const old=$("copyBtn").textContent;$("copyBtn").textContent="已複製";
+    setTimeout(()=>$("copyBtn").textContent=old,1200);
+  }catch{
+    $("codeArea").select();document.execCommand("copy");
+  }
+};
+
+$("downloadBtn").onclick=()=>{
+  const next=bumpPatch(currentPortalVersion);
+  const blob=new Blob([currentGeneratedHtml],{type:"text/html"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`bbq-portal-v${next}.html`;
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+
+  currentPortalVersion=next;
+  sourceName=`bbq-portal-v${next}.html`;
+  saveLocalDraft();
+  $("statusText").textContent=`已輸出 Portal v${next}`;
+  renderAll();
+};
+
+renderAll();
+</script>
+</body>
+</html>
